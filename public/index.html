@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>F1 Podium Predictor</title>
+<style>
+  :root{
+    --bg:#0a0a0a; --panel:#141414; --panel-2:#1b1b1b; --border:#2a2a2a;
+    --text:#eee; --muted:#9a9a9a; --red:#e10600; --gold:#ffd700; --teal:#27f4d2;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,Segoe UI,Roboto,sans-serif; min-height:100vh;
+    display:flex; align-items:flex-start; justify-content:center; padding:40px 16px;
+  }
+  .wrap{width:100%; max-width:720px}
+  header{margin-bottom:24px; text-align:center}
+  header h1{margin:0; font-size:1.8rem; letter-spacing:.5px; color:var(--red); font-weight:800}
+  header p{margin:6px 0 0; color:var(--muted); font-size:.9rem}
+
+  .card{background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:28px; margin-bottom:20px}
+  .race-card{display:flex; flex-direction:column; gap:4px; align-items:center; text-align:center}
+  .race-round{color:var(--gold); font-size:.75rem; text-transform:uppercase; letter-spacing:1.5px}
+  .race-name{font-size:1.6rem; font-weight:700; margin:2px 0}
+  .race-meta{color:var(--muted); font-size:.9rem}
+
+  .live-badge{
+    text-align:center; color:var(--red); font-size:.75rem; font-weight:700;
+    letter-spacing:.5px; margin-bottom:14px; animation:pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+  .podium{display:flex; gap:12px; margin-bottom:22px; align-items:flex-end}
+  .podium-slot{flex:1; border-radius:10px; padding:16px 10px; text-align:center; border:1px solid var(--border); background:var(--panel-2)}
+  .podium-slot.p1{order:2; padding-top:26px; border-color:var(--gold)}
+  .podium-slot.p2{order:1}
+  .podium-slot.p3{order:3}
+  .medal{font-size:1.6rem}
+  .p-driver{font-size:1.15rem; font-weight:800; margin-top:4px}
+  .p-team{font-size:.75rem; color:var(--muted); margin-top:2px}
+  .p-score{font-size:.7rem; color:#666; margin-top:6px}
+
+  table{width:100%; border-collapse:collapse; font-size:.85rem}
+  th, td{text-align:left; padding:8px 10px; border-bottom:1px solid var(--border)}
+  th{color:var(--muted); font-weight:600; font-size:.75rem; text-transform:uppercase}
+  tr.top3 td{color:var(--gold)}
+  tr.out td{color:#555; text-decoration:line-through}
+  tr.out td:last-child{text-decoration:none; color:var(--red); font-size:.7rem; text-transform:uppercase}
+
+  .meta-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:18px; font-size:.8rem; color:var(--muted)}
+  .meta-grid div b{color:var(--text); display:block; font-size:.9rem}
+
+  details{margin-top:16px; color:var(--muted); font-size:.8rem}
+  summary{cursor:pointer; color:var(--teal)}
+  pre{white-space:pre-wrap; font-size:.72rem; color:#888; max-height:200px; overflow:auto}
+
+  .live-form{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+  .live-form select, .live-form input{
+    background:var(--panel-2); border:1px solid var(--border); color:var(--text);
+    border-radius:8px; padding:9px 10px; font-size:.85rem;
+  }
+  .live-form select{flex:0 0 auto}
+  .live-form input{flex:1; min-width:140px}
+  .btn-secondary{
+    background:transparent; border:1px solid var(--border); color:var(--muted);
+    font-size:.8rem; padding:8px 16px; font-weight:500; border-radius:8px; cursor:pointer;
+  }
+  .btn-danger{border-color:var(--red); color:var(--red)}
+  .btn-danger:hover{background:var(--red); color:#fff}
+  #outList{margin-top:14px; display:flex; flex-direction:column; gap:8px}
+  .out-row{display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); border:1px solid var(--border); border-radius:8px; padding:8px 12px; font-size:.82rem}
+  .out-row .undo{color:var(--teal); cursor:pointer; font-size:.75rem; background:none; border:none}
+
+  .note{
+    background:var(--panel-2); border:1px solid var(--border); border-radius:10px;
+    padding:12px 14px; font-size:.78rem; color:var(--muted); margin-top:16px; line-height:1.5;
+  }
+  .note b{color:var(--gold)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🏎️ F1 PODIUM PREDICTOR</h1>
+    <p>Weighted least-squares regression, trained on real season data</p>
+  </header>
+
+  <div class="card">
+    <div class="race-card" id="raceCard"></div>
+  </div>
+
+  <div class="card">
+    <div class="live-badge" id="liveBadge" style="display:none">🔴 LIVE — adjusted for in-race retirements</div>
+    <div id="podium" class="podium"></div>
+    <table>
+      <thead><tr><th>Pos</th><th>Driver</th><th>Team</th><th>Score</th><th></th></tr></thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+    <div class="meta-grid" id="metaGrid"></div>
+    <details>
+      <summary>Training log</summary>
+      <pre id="trainingLog"></pre>
+    </details>
+  </div>
+
+  <div class="card">
+    <h3 style="margin:0 0 4px; font-size:1rem; color:var(--gold)">Race Control — mark a driver out</h3>
+    <p style="color:var(--muted); font-size:.8rem; margin:0 0 14px">
+      Crash / mechanical DNF / retirement. Re-ranks instantly — runs entirely in your browser, saved to this device only.
+    </p>
+    <div class="live-form">
+      <select id="driverSelect"></select>
+      <input id="reasonInput" type="text" placeholder="reason (optional, e.g. crash)">
+      <button id="markOutBtn" class="btn-secondary btn-danger">Mark OUT</button>
+    </div>
+    <div id="outList"></div>
+    <div style="text-align:center; margin-top:14px">
+      <button id="resetBtn" class="btn-secondary">Reset all retirements</button>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>Static snapshot:</b> this page was generated from a training run on real FastF1 data (2025 full season +
+    2026 rounds through the last completed race) plus this race's actual qualifying/practice results.
+    It does not retrain live in your browser — the "Mark OUT" control just re-ranks the already-computed
+    predictions around a reported retirement, which is why it works instantly with no server. To get a fresh
+    prediction for a different race, a new version of this page needs to be generated and redeployed.
+  </div>
+</div>
+
+<script>
+// ---- Baked-in prediction data (generated locally, embedded at deploy time) ----
+const PREDICTION = {"season": 2026, "round": 15, "race_name": "Azerbaijan Grand Prix", "country": "Azerbaijan", "race_date": "2026-09-26", "event_format": "conventional", "practice_session_used": "FP2", "trained_on": {"prev_season": 2025, "prev_season_rounds_used": "R17-R24", "current_season_rounds_used": "R7-R14", "training_rows": 160}, "features": ["Quali Gap (s)", "Tire Factor", "Env. Index", "Mean/Practice Lap (s)", "Pitstop (s)", "Recent Form (avg pos)", "Teammate Quali Delta (s)", "Grid Penalty (positions)", "Overtake Difficulty"], "coefficients": {"Quali Gap (s)": 5.635, "Tire Factor": 0.3394, "Env. Index": 1.0595, "Mean/Practice Lap (s)": -0.2058, "Pitstop (s)": 0.5659, "Recent Form (avg pos)": 6.1039, "Teammate Quali Delta (s)": 2.2915, "Grid Penalty (positions)": 0.1554, "Overtake Difficulty": 0.0258}, "rmse": 2.0389, "ranked": [{"pos": 1, "driver": "RUS", "team": "Mercedes", "score": 3.263}, {"pos": 2, "driver": "NOR", "team": "McLaren", "score": 3.433}, {"pos": 3, "driver": "VER", "team": "Red Bull Racing", "score": 3.5}, {"pos": 4, "driver": "LEC", "team": "Ferrari", "score": 4.26}, {"pos": 5, "driver": "HAM", "team": "Ferrari", "score": 5.169}, {"pos": 6, "driver": "HAD", "team": "Red Bull Racing", "score": 5.221}, {"pos": 7, "driver": "PIA", "team": "McLaren", "score": 5.645}, {"pos": 8, "driver": "SAI", "team": "Williams", "score": 6.346}, {"pos": 9, "driver": "GAS", "team": "Alpine", "score": 7.923}, {"pos": 10, "driver": "COL", "team": "Alpine", "score": 8.636}], "log": ["2025 R17 ok (10 drivers, w=1.0)", "2025 R18 ok (10 drivers, w=1.0)", "2025 R19 ok (10 drivers, w=1.0)", "2025 R20 ok (10 drivers, w=1.0)", "2025 R21 ok (10 drivers, w=1.0)", "2025 R22 ok (10 drivers, w=1.0)", "2025 R23 ok (10 drivers, w=1.0)", "2025 R24 ok (10 drivers, w=1.0)", "2026 R7 ok (10 drivers, w=3.0)", "2026 R8 ok (10 drivers, w=3.0)", "2026 R9 ok (10 drivers, w=3.0)", "2026 R10 ok (10 drivers, w=3.0)", "2026 R11 ok (10 drivers, w=3.0)", "2026 R12 ok (10 drivers, w=3.0)", "2026 R13 ok (10 drivers, w=3.0)", "2026 R14 ok (10 drivers, w=3.0)"], "cached": false, "out_drivers": [], "live_ranked": [{"pos": 1, "driver": "RUS", "team": "Mercedes", "score": 3.263, "status": "RUNNING"}, {"pos": 2, "driver": "NOR", "team": "McLaren", "score": 3.433, "status": "RUNNING"}, {"pos": 3, "driver": "VER", "team": "Red Bull Racing", "score": 3.5, "status": "RUNNING"}, {"pos": 4, "driver": "LEC", "team": "Ferrari", "score": 4.26, "status": "RUNNING"}, {"pos": 5, "driver": "HAM", "team": "Ferrari", "score": 5.169, "status": "RUNNING"}, {"pos": 6, "driver": "HAD", "team": "Red Bull Racing", "score": 5.221, "status": "RUNNING"}, {"pos": 7, "driver": "PIA", "team": "McLaren", "score": 5.645, "status": "RUNNING"}, {"pos": 8, "driver": "SAI", "team": "Williams", "score": 6.346, "status": "RUNNING"}, {"pos": 9, "driver": "GAS", "team": "Alpine", "score": 7.923, "status": "RUNNING"}, {"pos": 10, "driver": "COL", "team": "Alpine", "score": 8.636, "status": "RUNNING"}]}; // END_PREDICTION
+
+const STORAGE_KEY = `f1-out-drivers-${PREDICTION.season}-${PREDICTION.round}`;
+
+function loadOutDrivers(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  }catch(e){ return []; }
+}
+function saveOutDrivers(list){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }catch(e){}
+}
+
+let outDrivers = loadOutDrivers();
+
+const raceCard = document.getElementById('raceCard');
+const liveBadge = document.getElementById('liveBadge');
+const podiumEl = document.getElementById('podium');
+const tableBody = document.getElementById('tableBody');
+const metaGrid = document.getElementById('metaGrid');
+const trainingLog = document.getElementById('trainingLog');
+const driverSelect = document.getElementById('driverSelect');
+const reasonInput = document.getElementById('reasonInput');
+const markOutBtn = document.getElementById('markOutBtn');
+const outList = document.getElementById('outList');
+const resetBtn = document.getElementById('resetBtn');
+
+function liveRanked(){
+  const outSet = new Set(outDrivers.map(o=>o.driver));
+  const running = PREDICTION.ranked.filter(r=>!outSet.has(r.driver));
+  const retired = PREDICTION.ranked.filter(r=>outSet.has(r.driver));
+  const result = running.map((r,i)=>({...r, pos:i+1, status:'RUNNING'}));
+  retired.forEach(r=>{
+    const meta = outDrivers.find(o=>o.driver===r.driver);
+    result.push({...r, pos:null, status:'OUT', reason: meta ? meta.reason : ''});
+  });
+  return result;
+}
+
+function render(){
+  raceCard.innerHTML = `
+    <span class="race-round">Round ${PREDICTION.round} · ${PREDICTION.season} Season</span>
+    <div class="race-name">${PREDICTION.race_name}</div>
+    <div class="race-meta">${PREDICTION.country} &middot; ${PREDICTION.race_date} &middot; ${PREDICTION.event_format.replace('_',' ')}</div>
+  `;
+
+  const ranked = liveRanked();
+  liveBadge.style.display = outDrivers.length ? 'block' : 'none';
+  const running = ranked.filter(r=>r.status==='RUNNING');
+  const out = ranked.filter(r=>r.status==='OUT');
+
+  const top3 = running.slice(0,3);
+  const medals = ['🥇','🥈','🥉'];
+  podiumEl.innerHTML = top3.map((r,i)=>`
+    <div class="podium-slot p${i+1}">
+      <div class="medal">${medals[i]}</div>
+      <div class="p-driver">${r.driver}</div>
+      <div class="p-team">${r.team}</div>
+      <div class="p-score">score ${r.score}</div>
+    </div>
+  `).join('');
+
+  tableBody.innerHTML = [
+    ...running.map(r=>`
+      <tr class="${r.pos<=3?'top3':''}">
+        <td>P${r.pos}</td><td>${r.driver}</td><td>${r.team}</td><td>${r.score}</td><td></td>
+      </tr>`),
+    ...out.map(r=>`
+      <tr class="out">
+        <td>—</td><td>${r.driver}</td><td>${r.team}</td><td>${r.score}</td>
+        <td>OUT${r.reason ? ' · '+r.reason : ''}</td>
+      </tr>`)
+  ].join('');
+
+  metaGrid.innerHTML = `
+    <div><b>${PREDICTION.trained_on.training_rows}</b>training rows</div>
+    <div><b>${PREDICTION.rmse}</b>weighted RMSE</div>
+    <div><b>${PREDICTION.trained_on.prev_season} ${PREDICTION.trained_on.prev_season_rounds_used}</b>prev season window</div>
+    <div><b>${PREDICTION.trained_on.current_season_rounds_used}</b>current season window</div>
+    <div><b>${PREDICTION.practice_session_used || 'n/a'}</b>practice session used</div>
+  `;
+  trainingLog.textContent = (PREDICTION.log || []).join('\n');
+
+  const runningDrivers = PREDICTION.ranked.filter(r => !outDrivers.some(o=>o.driver===r.driver));
+  driverSelect.innerHTML = runningDrivers.map(r=>`<option value="${r.driver}">${r.driver} — ${r.team}</option>`).join('');
+
+  outList.innerHTML = outDrivers.length ? outDrivers.map(o=>`
+    <div class="out-row">
+      <span>🔴 <b>${o.driver}</b> — ${o.reason || 'retired'}</span>
+      <button class="undo" data-driver="${o.driver}">undo</button>
+    </div>
+  `).join('') : `<div style="color:var(--muted); font-size:.8rem">No retirements marked — full predicted field still running.</div>`;
+
+  outList.querySelectorAll('.undo').forEach(btn=>{
+    btn.addEventListener('click', () => {
+      outDrivers = outDrivers.filter(o=>o.driver !== btn.dataset.driver);
+      saveOutDrivers(outDrivers);
+      render();
+    });
+  });
+}
+
+markOutBtn.addEventListener('click', () => {
+  const driver = driverSelect.value;
+  const reason = reasonInput.value.trim();
+  if(!driver) return;
+  if(!outDrivers.some(o=>o.driver===driver)){
+    outDrivers.push({driver, reason});
+    saveOutDrivers(outDrivers);
+  }
+  reasonInput.value = '';
+  render();
+});
+
+resetBtn.addEventListener('click', () => {
+  outDrivers = [];
+  saveOutDrivers(outDrivers);
+  render();
+});
+
+render();
+</script>
+</body>
+</html>

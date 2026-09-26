@@ -1,0 +1,45 @@
+name: Update F1 prediction
+
+on:
+  schedule:
+    # Every 2 hours. FastF1/Ergast's live data lags right after a session ends
+    # (seen repeatedly in testing), so this mainly matters during a race weekend
+    # once quali/practice results actually post — use "Run workflow" below for
+    # an on-demand refresh right after that happens instead of waiting.
+    - cron: "0 */2 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache FastF1 data (completed races don't change)
+        uses: actions/cache@v4
+        with:
+          path: f1_cache
+          key: fastf1-cache-v1
+
+      - name: Install dependencies
+        run: pip install -r webapp/requirements.txt
+
+      - name: Generate prediction site
+        working-directory: webapp
+        run: python generate_site.py
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "f1-predictor-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add public/index.html
+          git diff --cached --quiet && echo "No change" && exit 0
+          git commit -m "Auto-update prediction ($(date -u +'%Y-%m-%d %H:%M UTC'))"
+          git push
