@@ -17,6 +17,19 @@ OUTPUT_PATH = os.path.join(REPO_ROOT, "public", "index.html")
 def main():
     result = predictor.run_prediction(top_n=10, force=True)
 
+    if not result.get("ranked"):
+        # Happens when the "next race" is far enough out that it has no
+        # quali/practice sessions yet (e.g. the day after a race, before the
+        # following one's weekend starts) — there's nothing to predict yet.
+        # Leave whatever's already published alone rather than overwrite a
+        # good page with an empty podium.
+        print(
+            f"No quali/practice data yet for {result['race_name']} "
+            f"(Round {result['round']}, {result['season']}) — skipping, "
+            f"leaving existing public/index.html untouched."
+        )
+        return
+
     template = open(TEMPLATE_PATH, encoding="utf-8").read()
     data = json.dumps(result)
 

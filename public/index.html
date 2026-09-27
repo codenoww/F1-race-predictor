@@ -121,12 +121,22 @@
     </div>
   </div>
 
+  <div class="card" style="text-align:center">
+    <h3 style="margin:0 0 4px; font-size:1rem; color:var(--gold)">Refresh Prediction</h3>
+    <p style="color:var(--muted); font-size:.8rem; margin:0 0 14px">
+      Triggers a real retrain on GitHub Actions (fresh FastF1 data), then auto-redeploys here in ~1-2 min.
+      Also runs automatically every 2 hours.
+    </p>
+    <button id="refreshBtn" class="btn-secondary" style="border-color:var(--teal); color:var(--teal)">Refresh Prediction</button>
+    <div id="refreshStatus" style="margin-top:10px; font-size:.8rem; color:var(--muted); min-height:1.2em"></div>
+  </div>
+
   <div class="note">
-    <b>Static snapshot:</b> this page was generated from a training run on real FastF1 data (2025 full season +
-    2026 rounds through the last completed race) plus this race's actual qualifying/practice results.
-    It does not retrain live in your browser — the "Mark OUT" control just re-ranks the already-computed
-    predictions around a reported retirement, which is why it works instantly with no server. To get a fresh
-    prediction for a different race, a new version of this page needs to be generated and redeployed.
+    <b>Static snapshot:</b> this page is generated from a training run on real FastF1 data (2025 full season +
+    2026 rounds through the last completed race) plus this race's actual qualifying/practice results —
+    automatically every 2 hours, or on demand via the button above. It does not retrain live in your browser —
+    the "Mark OUT" control just re-ranks the already-computed predictions around a reported retirement, which
+    is why that part works instantly with no server.
   </div>
 </div>
 
@@ -159,6 +169,8 @@ const reasonInput = document.getElementById('reasonInput');
 const markOutBtn = document.getElementById('markOutBtn');
 const outList = document.getElementById('outList');
 const resetBtn = document.getElementById('resetBtn');
+const refreshBtn = document.getElementById('refreshBtn');
+const refreshStatus = document.getElementById('refreshStatus');
 
 function liveRanked(){
   const outSet = new Set(outDrivers.map(o=>o.driver));
@@ -251,6 +263,21 @@ resetBtn.addEventListener('click', () => {
   outDrivers = [];
   saveOutDrivers(outDrivers);
   render();
+});
+
+refreshBtn.addEventListener('click', async () => {
+  refreshBtn.disabled = true;
+  refreshStatus.textContent = 'Triggering...';
+  try {
+    const r = await fetch('/api/trigger', { method: 'POST' });
+    const d = await r.json();
+    if (!r.ok || d.error) throw new Error(d.error || `HTTP ${r.status}`);
+    refreshStatus.textContent = 'Triggered! New data will appear here in ~1-2 min once GitHub Actions finishes and Vercel redeploys.';
+  } catch (e) {
+    refreshStatus.textContent = 'Error: ' + e.message;
+  } finally {
+    refreshBtn.disabled = false;
+  }
 });
 
 render();
