@@ -445,12 +445,21 @@ def run_prediction(top_n=10, force=False):
     A_train, mn, rng = normalise(A_train_raw)
     x_hat, b_hat_train, resid, rmse_train = weighted_ridge_least_squares(A_train, b_train, W_vec)
 
-    drv, teams_t, feat_raw, practice_label = _with_retry(
-        _load_future_quali, target_season, target_round, top_n, history)
-    feat_norm = norm_apply(feat_raw, mn, rng)
-    b_pred = feat_norm @ x_hat
-
-    ranked = sorted(zip(drv, teams_t, b_pred.tolist()), key=lambda x: x[2])
+    try:
+        drv, teams_t, feat_raw, practice_label = _with_retry(
+            _load_future_quali, target_season, target_round, top_n, history)
+        feat_norm = norm_apply(feat_raw, mn, rng)
+        b_pred = feat_norm @ x_hat
+        ranked = sorted(zip(drv, teams_t, b_pred.tolist()), key=lambda x: x[2])
+    except Exception as e:
+        # No quali/practice data yet (race hasn't happened) or the fetch got
+        # rate-limited/blocked (seen repeatedly on shared CI runner IPs) —
+        # either way, degrade to an empty prediction rather than crash the
+        # whole run. The caller (generate_site.py) treats an empty "ranked"
+        # as "nothing to publish yet" and leaves prior good output alone.
+        practice_label = None
+        ranked = []
+        log_lines.append(f"target race ({target_season} R{target_round}) fetch failed: {e}")
     result = {
         "season": target_season,
         "round": target_round,
