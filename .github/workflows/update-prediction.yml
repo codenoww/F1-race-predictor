@@ -1,12 +1,9 @@
 name: Update F1 prediction
 
 on:
-  schedule:
-    # Every 2 hours. FastF1/Ergast's live data lags right after a session ends
-    # (seen repeatedly in testing), so this mainly matters during a race weekend
-    # once quali/practice results actually post — use "Run workflow" below for
-    # an on-demand refresh right after that happens instead of waiting.
-    - cron: "0 */2 * * *"
+  # Manual only. GitHub-hosted runners cannot reach F1's live-timing archive, so a
+  # scheduled run there can never produce a full prediction (see generate_site.py).
+  # This workflow is meant for a self-hosted runner on a machine that can.
   workflow_dispatch: {}
 
 permissions:
@@ -40,11 +37,6 @@ jobs:
 
       - name: Install dependencies
         run: pip install -r webapp/requirements.txt
-
-      - name: Diagnose FastF1 access from this runner
-        continue-on-error: true
-        working-directory: webapp
-        run: python -u diagnose_fastf1.py
 
       - name: Generate prediction site
         working-directory: webapp

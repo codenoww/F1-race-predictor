@@ -23,10 +23,28 @@ OUTPUT_HTML = os.path.join(PUBLIC_DIR, "index.html")
 OUTPUT_JSON = os.path.join(PUBLIC_DIR, "prediction.json")
 
 
+def live_timing_reachable():
+    """Laps, tyres, weather, pit times and practice pace come from F1's live-timing
+    archive. GitHub-hosted runners can't reach it (every endpoint answers "No data for
+    this session"), and FastF1 then silently falls back to defaults, which would publish
+    a degraded prediction. Probe one finished race that always has data."""
+    try:
+        sess = predictor.fastf1.get_session(2025, 1, "R")
+        sess.load(telemetry=False, weather=False, messages=False)
+        return len(sess.laps) > 0
+    except Exception:
+        return False
+
+
 def main():
     cache_dir = os.path.join(REPO_ROOT, "f1_cache")
     n_cached = sum(len(files) for _, _, files in os.walk(cache_dir)) if os.path.isdir(cache_dir) else 0
     print(f"FastF1 cache files present at start: {n_cached}")
+    if not live_timing_reachable():
+        print("F1 live-timing data is not reachable from this machine, so a prediction "
+              "here would silently drop lap/tyre/weather/pit/practice features. Skipping; "
+              "run generate_site.py on a machine that can reach it.")
+        return
     result = predictor.run_prediction(top_n=10, force=True)
 
     if not result.get("ranked"):

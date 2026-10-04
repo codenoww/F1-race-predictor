@@ -122,21 +122,20 @@
   </div>
 
   <div class="card" style="text-align:center">
-    <h3 style="margin:0 0 4px; font-size:1rem; color:var(--gold)">Refresh Prediction</h3>
+    <h3 style="margin:0 0 4px; font-size:1rem; color:var(--gold)">Latest prediction</h3>
     <p style="color:var(--muted); font-size:.8rem; margin:0 0 14px">
-      Triggers a real retrain on GitHub Actions (fresh FastF1 data), then auto-redeploys here in ~1-2 min.
-      Also runs automatically every 2 hours.
+      Predictions are generated on a machine that can reach F1's live-timing data, then published here.
+      This checks whether a newer one has been published.
     </p>
-    <button id="refreshBtn" class="btn-secondary" style="border-color:var(--teal); color:var(--teal)">Refresh Prediction</button>
+    <button id="refreshBtn" class="btn-secondary" style="border-color:var(--teal); color:var(--teal)">Check for newer prediction</button>
     <div id="refreshStatus" style="margin-top:10px; font-size:.8rem; color:var(--muted); min-height:1.2em"></div>
   </div>
 
   <div class="note">
-    <b>Static snapshot:</b> this page is generated from a training run on real FastF1 data (2025 full season +
-    2026 rounds through the last completed race) plus this race's actual qualifying/practice results —
-    automatically every 2 hours, or on demand via the button above. It does not retrain live in your browser —
-    the "Mark OUT" control just re-ranks the already-computed predictions around a reported retirement, which
-    is why that part works instantly with no server.
+    <b>How this works:</b> a prediction is trained on real FastF1 data (recent races plus this race's
+    qualifying and practice results) and published to this page. It does not retrain in your browser;
+    "Mark OUT" just re-ranks the already-computed predictions around a reported retirement, which is why
+    it works instantly with no server.
   </div>
 </div>
 
@@ -288,38 +287,19 @@ async function syncOnLoad(){
 
 refreshBtn.addEventListener('click', async () => {
   refreshBtn.disabled = true;
-  refreshStatus.textContent = 'Triggering...';
-  const before = PREDICTION.generated_at || '';
+  refreshStatus.textContent = 'Checking...';
   try{
-    const r = await fetch('/api/trigger', { method: 'POST' });
-    const d = await r.json();
-    if (!r.ok || d.error) throw new Error(d.error || `HTTP ${r.status}`);
-  }catch(e){
-    refreshStatus.textContent = 'Error: ' + e.message;
-    refreshBtn.disabled = false;
-    return;
-  }
-  const started = Date.now();
-  const tick = async () => {
-    const mins = Math.floor((Date.now() - started) / 60000);
-    refreshStatus.textContent = `Retraining on GitHub Actions... (${mins}m elapsed, usually 4-5 min)`;
-    try{
-      const latest = await fetchLatest();
-      if((latest.generated_at || '') > before && latest.ranked && latest.ranked.length){
-        applyIfNewer(latest);
-        refreshStatus.textContent = 'Updated with the latest prediction.';
-        refreshBtn.disabled = false;
-        return;
-      }
-    }catch(e){}
-    if(Date.now() - started > 12*60*1000){
-      refreshStatus.textContent = 'No new prediction published yet (the next race may have no qualifying data yet, or the run is still going). Try refreshing the page in a few minutes.';
-      refreshBtn.disabled = false;
-      return;
+    const latest = await fetchLatest();
+    if(applyIfNewer(latest)){
+      refreshStatus.textContent = 'Updated to the newest published prediction.';
+    }else{
+      refreshStatus.textContent = `Already the newest published prediction (generated ${PREDICTION.generated_at || 'unknown'}).`;
     }
-    setTimeout(tick, 15000);
-  };
-  setTimeout(tick, 15000);
+  }catch(e){
+    refreshStatus.textContent = 'Could not reach the published prediction: ' + e.message;
+  }finally{
+    refreshBtn.disabled = false;
+  }
 });
 
 render();
