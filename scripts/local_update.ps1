@@ -18,6 +18,11 @@ function Run($label, [scriptblock]$cmd) {
 Log "=== run started ==="
 if ((Run "git pull" { git pull --rebase --autostash origin main }) -ne 0) { Log "git pull failed - aborting"; exit 1 }
 
+$env:GIT_TERMINAL_PROMPT = "0"   # never hang waiting for a credential prompt in a hidden window
+if ((Run "push check" { git push --dry-run origin main }) -ne 0) {
+    Log "WARNING: cannot push to GitHub from this context - a new prediction would NOT be published"
+} else { Log "push access OK" }
+
 Push-Location (Join-Path $repo "webapp")
 $code = Run "generate" { & $python -u generate_site.py }
 Pop-Location
