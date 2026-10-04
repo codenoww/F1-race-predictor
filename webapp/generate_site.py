@@ -36,6 +36,19 @@ def live_timing_reachable():
         return False
 
 
+def _unchanged_since_last_publish(new_result):
+    """True if the published prediction.json already has this race with the same
+    ranking and scores, so there is nothing new to commit."""
+    try:
+        old = json.load(open(OUTPUT_JSON, encoding="utf-8"))
+    except Exception:
+        return False
+    def key(r):
+        return (r.get("season"), r.get("round"),
+                [(x["driver"], x["score"]) for x in r.get("ranked", [])])
+    return key(old) == key(new_result)
+
+
 def main():
     cache_dir = os.path.join(REPO_ROOT, "f1_cache")
     n_cached = sum(len(files) for _, _, files in os.walk(cache_dir)) if os.path.isdir(cache_dir) else 0
@@ -58,6 +71,10 @@ def main():
         )
         for line in result.get("log", [])[-3:]:
             print("  log:", line)
+        return
+
+    if _unchanged_since_last_publish(result):
+        print(f"{result['race_name']}: prediction unchanged since last publish - nothing to do.")
         return
 
     result["generated_at"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")

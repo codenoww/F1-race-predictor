@@ -2,3 +2,5 @@ f1_cache/
 webapp/prediction_cache.json
 __pycache__/
 *.pyc
+update.log
+_apply.py
