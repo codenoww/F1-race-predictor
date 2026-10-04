@@ -24,6 +24,9 @@ OUTPUT_JSON = os.path.join(PUBLIC_DIR, "prediction.json")
 
 
 def main():
+    cache_dir = os.path.join(REPO_ROOT, "f1_cache")
+    n_cached = sum(len(files) for _, _, files in os.walk(cache_dir)) if os.path.isdir(cache_dir) else 0
+    print(f"FastF1 cache files present at start: {n_cached}")
     result = predictor.run_prediction(top_n=10, force=True)
 
     if not result.get("ranked"):
