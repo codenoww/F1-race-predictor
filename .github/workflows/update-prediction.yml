@@ -41,6 +41,11 @@ jobs:
       - name: Install dependencies
         run: pip install -r webapp/requirements.txt
 
+      - name: Diagnose FastF1 access from this runner
+        continue-on-error: true
+        working-directory: webapp
+        run: python -u diagnose_fastf1.py
+
       - name: Generate prediction site
         working-directory: webapp
         run: python generate_site.py
