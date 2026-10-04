@@ -142,18 +142,18 @@
 
 <script>
 // ---- Baked-in prediction data (generated locally, embedded at deploy time) ----
-const PREDICTION = {}; // END_PREDICTION
+let PREDICTION = {}; // END_PREDICTION
 
-const STORAGE_KEY = `f1-out-drivers-${PREDICTION.season}-${PREDICTION.round}`;
+const storageKey = () => `f1-out-drivers-${PREDICTION.season}-${PREDICTION.round}`;
 
 function loadOutDrivers(){
   try{
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(storageKey());
     return raw ? JSON.parse(raw) : [];
   }catch(e){ return []; }
 }
 function saveOutDrivers(list){
-  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }catch(e){}
+  try{ localStorage.setItem(storageKey(), JSON.stringify(list)); }catch(e){}
 }
 
 let outDrivers = loadOutDrivers();
@@ -265,22 +265,65 @@ resetBtn.addEventListener('click', () => {
   render();
 });
 
+const LIVE_URL = 'https://raw.githubusercontent.com/codenoww/F1-race-predictor/main/public/prediction.json';
+
+async function fetchLatest(){
+  const r = await fetch(`${LIVE_URL}?t=${Date.now()}`, { cache: 'no-store' });
+  if(!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
+function applyIfNewer(latest){
+  if(!latest || !latest.ranked || !latest.ranked.length) return false;
+  if((latest.generated_at || '') <= (PREDICTION.generated_at || '')) return false;
+  PREDICTION = latest;
+  outDrivers = loadOutDrivers();
+  render();
+  return true;
+}
+
+async function syncOnLoad(){
+  try{ applyIfNewer(await fetchLatest()); }catch(e){ /* offline or repo unreachable: keep embedded snapshot */ }
+}
+
 refreshBtn.addEventListener('click', async () => {
   refreshBtn.disabled = true;
   refreshStatus.textContent = 'Triggering...';
-  try {
+  const before = PREDICTION.generated_at || '';
+  try{
     const r = await fetch('/api/trigger', { method: 'POST' });
     const d = await r.json();
     if (!r.ok || d.error) throw new Error(d.error || `HTTP ${r.status}`);
-    refreshStatus.textContent = 'Triggered! New data will appear here in ~1-2 min once GitHub Actions finishes and Vercel redeploys.';
-  } catch (e) {
+  }catch(e){
     refreshStatus.textContent = 'Error: ' + e.message;
-  } finally {
     refreshBtn.disabled = false;
+    return;
   }
+  const started = Date.now();
+  const tick = async () => {
+    const mins = Math.floor((Date.now() - started) / 60000);
+    refreshStatus.textContent = `Retraining on GitHub Actions... (${mins}m elapsed, usually 4-5 min)`;
+    try{
+      const latest = await fetchLatest();
+      if((latest.generated_at || '') > before && latest.ranked && latest.ranked.length){
+        applyIfNewer(latest);
+        refreshStatus.textContent = 'Updated with the latest prediction.';
+        refreshBtn.disabled = false;
+        return;
+      }
+    }catch(e){}
+    if(Date.now() - started > 12*60*1000){
+      refreshStatus.textContent = 'No new prediction published yet (the next race may have no qualifying data yet, or the run is still going). Try refreshing the page in a few minutes.';
+      refreshBtn.disabled = false;
+      return;
+    }
+    setTimeout(tick, 15000);
+  };
+  setTimeout(tick, 15000);
 });
 
 render();
+syncOnLoad();
 </script>
 </body>
 </html>
