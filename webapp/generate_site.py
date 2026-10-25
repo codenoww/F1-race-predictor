@@ -25,28 +25,24 @@ OUTPUT_JSON = os.path.join(PUBLIC_DIR, "prediction.json")
 
 def live_timing_reachable():
     """Laps, tyres, weather, pit times and practice pace come from F1's live-timing
-    archive. GitHub-hosted runners can't reach it (every endpoint answers "No data for
-    this session"), and FastF1 then silently falls back to defaults, which would publish
-    a degraded prediction. Probe one finished race that always has data."""
+    archive. If it refuses us (blocked from GitHub runners; HTTP 401 for everyone from
+    Oct 2026), FastF1 silently falls back to defaults and we would publish a degraded
+    prediction. Ask the server itself: loading a cached session would pass even while
+    new sessions cannot be fetched."""
+    import requests
+    from fastf1 import _api
     try:
         sess = predictor.fastf1.get_session(2025, 1, "R")
-        sess.load(telemetry=False, weather=False, messages=False)
-        return len(sess.laps) > 0
-    except Exception:
+        url = _api.base_url + sess.api_path + _api.pages["timing_data"]
+        r = requests.get(url, headers=_api.headers, timeout=25, stream=True)
+        ok = r.status_code == 200
+        r.close()
+        if not ok:
+            print(f"F1 live-timing answered HTTP {r.status_code} for a known-good session.")
+        return ok
+    except Exception as e:
+        print(f"F1 live-timing request failed: {type(e).__name__}")
         return False
-
-
-def _unchanged_since_last_publish(new_result):
-    """True if the published prediction.json already has this race with the same
-    ranking and scores, so there is nothing new to commit."""
-    try:
-        old = json.load(open(OUTPUT_JSON, encoding="utf-8"))
-    except Exception:
-        return False
-    def key(r):
-        return (r.get("season"), r.get("round"),
-                [(x["driver"], x["score"]) for x in r.get("ranked", [])])
-    return key(old) == key(new_result)
 
 
 def main():
