@@ -85,6 +85,10 @@ def refusal(r):
     if r["status"] in (None, 200):
         return None
     b = r["body"] if isinstance(r["body"], dict) else {}
+    if r["status"] == 404 and "No results found" in str(b.get("detail", "")):
+        return None  # just "no rows yet", not a refusal
+    if r["status"] is None:
+        return f"request failed: {r['text']}"
     return f"HTTP {r['status']}: {str(b.get('detail') or r['text'] or '')[:120]}"
 
 
@@ -283,7 +287,12 @@ def watch(args):
         if time.time() - last_save > 600:
             write(f"watch-{sk}-{name.replace(' ', '')}.json", {**summary(False), "events": events})
             last_save = time.time()
-        time.sleep(args.live_interval if phase != "post" else args.post_interval)
+        if phase == "pre":  # the job may start long before the session: poll gently, wake just before it begins
+            nap = min(args.pre_interval, max(5, (start - utcnow()).total_seconds() - 5))
+        else:
+            nap = args.live_interval if phase == "live" else args.post_interval
+        limit = min(deadline, stop) if stop else deadline
+        time.sleep(max(1, min(nap, (limit - utcnow()).total_seconds())))
 
     final = {**summary(True), "events": events}
     write(f"watch-{sk}-{name.replace(' ', '')}.json", final)
@@ -303,6 +312,7 @@ def main():
     ap.add_argument("--tail-minutes", type=int)
     ap.add_argument("--max-minutes", type=float, help="hard stop (testing)")
     ap.add_argument("--live-interval", type=int, default=30)
+    ap.add_argument("--pre-interval", type=int, default=180)
     ap.add_argument("--post-interval", type=int, default=120)
     args = ap.parse_args()
     return {"probe": lambda: probe(), "watch": lambda: watch(args), "lookup": lambda: lookup(args)}[args.mode]()

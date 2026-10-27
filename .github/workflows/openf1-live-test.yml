@@ -5,9 +5,11 @@ name: OpenF1 live test
 # Results are committed to livetest/results/. Delete this workflow after the weekend.
 on:
   schedule:
-    - cron: "15 18 30 10 *"   # Practice 1 runs 18:30-19:30 (shake-down)
-    - cron: "45 20 31 10 *"   # Qualifying runs 21:00-22:00
-    - cron: "45 19 1 11 *"    # Race runs 20:00-22:00
+    # Each starts an hour early because GitHub can start scheduled jobs late; the recorder
+    # waits for its session (it accepts a start up to 2 hours before).
+    - cron: "30 17 30 10 *"   # Practice 1 runs 18:30-19:30 (shake-down)
+    - cron: "0 20 31 10 *"    # Qualifying runs 21:00-22:00
+    - cron: "0 19 1 11 *"     # Race runs 20:00-22:00
     - cron: "0 12 1 11 *"     # lookup: are the qualifying results published by midday the next day?
     - cron: "0 12 2 11 *"     # lookup: same for the race
   workflow_dispatch: {}
@@ -26,7 +28,7 @@ concurrency:
 jobs:
   record:
     runs-on: ubuntu-latest
-    timeout-minutes: 300
+    timeout-minutes: 345
     steps:
       - uses: actions/checkout@v4
 
@@ -45,7 +47,7 @@ jobs:
           case "$EVENT:$CRON" in
             "schedule:0 12 1 11 *") python -u livetest/record.py --mode lookup --session Qualifying ;;
             "schedule:0 12 2 11 *") python -u livetest/record.py --mode lookup --session Race ;;
-            schedule:*)             python -u livetest/record.py --mode watch ;;
+            schedule:*)             python -u livetest/record.py --mode watch --lead-minutes 120 ;;
             *)                      python -u livetest/record.py --mode probe ;;
           esac
 
