@@ -1,0 +1,61 @@
+name: OpenF1 live test
+
+# One-off experiment for the 2026 Mexico City GP weekend (all times UTC). It records how OpenF1
+# behaves during real sessions so we can decide whether the dashboard can show live data.
+# Results are committed to livetest/results/. Delete this workflow after the weekend.
+on:
+  schedule:
+    - cron: "15 18 30 10 *"   # Practice 1 runs 18:30-19:30 (shake-down)
+    - cron: "45 20 31 10 *"   # Qualifying runs 21:00-22:00
+    - cron: "45 19 1 11 *"    # Race runs 20:00-22:00
+    - cron: "0 12 1 11 *"     # lookup: are the qualifying results published by midday the next day?
+    - cron: "0 12 2 11 *"     # lookup: same for the race
+  workflow_dispatch: {}
+  push:
+    paths:
+      - "livetest/**"
+      - ".github/workflows/openf1-live-test.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: openf1-live-test
+  cancel-in-progress: false
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run recorder
+        env:
+          EVENT: ${{ github.event_name }}
+          CRON: ${{ github.event.schedule }}
+        run: |
+          case "$EVENT:$CRON" in
+            "schedule:0 12 1 11 *") python -u livetest/record.py --mode lookup --session Qualifying ;;
+            "schedule:0 12 2 11 *") python -u livetest/record.py --mode lookup --session Race ;;
+            schedule:*)             python -u livetest/record.py --mode watch ;;
+            *)                      python -u livetest/record.py --mode probe ;;
+          esac
+
+      - name: Commit results
+        if: always()
+        run: |
+          git config user.name "f1-livetest-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add livetest/results
+          git diff --cached --quiet && echo "nothing to commit" && exit 0
+          git commit -m "OpenF1 live test: record results ($(date -u +'%Y-%m-%d %H:%M UTC'))"
+          git pull --rebase origin main
+          git push
