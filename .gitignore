@@ -4,3 +4,5 @@ __pycache__/
 *.pyc
 update.log
 _apply.py
+
+**/prediction_cache.json
