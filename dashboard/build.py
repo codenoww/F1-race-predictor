@@ -80,6 +80,7 @@ def get_schedule(year):
             "country": r["Circuit"]["Location"]["country"],
             "locality": r["Circuit"]["Location"]["locality"],
             "circuit": r["Circuit"]["circuitName"],
+            "circuit_id": r["Circuit"]["circuitId"],
             "start": parse_utc(r["date"], r.get("time")),
             "quali_start": parse_utc(q["date"], q.get("time")) if q else None,
             "sprint": bool(r.get("Sprint")),
@@ -113,6 +114,72 @@ def fetch_quali(year, rnd):
 def fetch_results(year, rnd):
     races = api_get(f"{year}/{rnd}/results.json?limit=100")["RaceTable"]["Races"]
     return compact_results(races[0]["Results"]) if races else []
+
+
+def driver_label(d):
+    """Short name for display; older drivers have no 3-letter code, so use their surname."""
+    return d.get("code") or d.get("familyName", d["driverId"]).upper()[:12]
+
+
+def to_int(v):
+    try:
+        return int(v)
+    except (TypeError, ValueError):
+        return None
+
+
+def fetch_circuit_editions(circuit_id):
+    """Every past edition at a circuit: who started on pole (grid P1) and where they finished,
+    and who won and from which grid slot. Two requests: results filtered to grid=1 and to
+    position=1 (full history back to 1950, unlike the qualifying endpoint)."""
+    pole_races = api_get(f"circuits/{circuit_id}/grid/1/results.json?limit=100")["RaceTable"]["Races"]
+    win_races = api_get(f"circuits/{circuit_id}/results/1.json?limit=100")["RaceTable"]["Races"]
+    editions = {}
+    for r in pole_races:
+        x = r["Results"][0]
+        editions.setdefault(int(r["season"]), {})["pole"] = driver_label(x["Driver"])
+        editions[int(r["season"])]["pole_finish"] = to_int(x["position"])
+    for r in win_races:
+        x = r["Results"][0]
+        e = editions.setdefault(int(r["season"]), {})
+        e["winner"] = driver_label(x["Driver"])
+        e["winner_grid"] = to_int(x["grid"])
+    return [{"year": y, **v} for y, v in sorted(editions.items())]
+
+
+def circuit_summary(editions, before_year, since=2000):
+    """Stats over modern-era editions strictly before `before_year`, plus the last 10 for display."""
+    past = [e for e in editions if e["year"] < before_year and "winner" in e]
+    modern = [e for e in past if e["year"] >= since]
+    pole_known = [e for e in modern if e.get("pole_finish") is not None]
+    grids = [e["winner_grid"] for e in modern if e.get("winner_grid")]
+    return {
+        "editions_total": len(past),
+        "since": since,
+        "editions_modern": len(modern),
+        "pole_known": len(pole_known),
+        "pole_wins": sum(1 for e in pole_known if e["pole_finish"] == 1),
+        "winner_top3": sum(1 for g in grids if g <= 3),
+        "winner_grids_known": len(grids),
+        "winner_avg_grid": round(sum(grids) / len(grids), 1) if grids else None,
+        "worst_winning_grid": max(grids) if grids else None,
+        "recent": [{"year": e["year"], "pole": e.get("pole"), "pole_finish": e.get("pole_finish"),
+                    "winner": e.get("winner"), "winner_grid": e.get("winner_grid")} for e in past[-10:]][::-1],
+    }
+
+
+def season_pole_stats(table, keys, year):
+    """How often did the qualifying pole-sitter win, in races of `year` completed so far?"""
+    races = wins = 0
+    for k in keys:
+        if key_tuple(k)[0] != year:
+            continue
+        pole = [r for r in table[k] if r["qpos"] == 1]
+        if not pole or pole[0]["y"] is None:
+            continue
+        races += 1
+        wins += int(pole[0]["y"] == 1)
+    return {"year": year, "races": races, "pole_wins": wins}
 
 
 def load_json(path, default):
@@ -438,9 +505,31 @@ def main():
                      "race_start": iso(target["start"]),
                      "quali_start": iso(target["quali_start"]) if target["quali_start"] else None,
                      "sprint_weekend": target["sprint"], "status": status}
+    # ---- circuit history (cached per circuit; refreshed monthly) and pole-to-win stats
+    circuit_history = None
+    if target:
+        cache_path = data_dir / "circuits.json"
+        circuits = load_json(cache_path, {})
+        c = circuits.get(target["circuit_id"])
+        stale = (not c) or (now - datetime.fromisoformat(c["fetched"].replace("Z", "+00:00"))) > timedelta(days=30)
+        if stale:
+            try:
+                circuits[target["circuit_id"]] = c = {"fetched": iso(now),
+                                                      "editions": fetch_circuit_editions(target["circuit_id"])}
+                save_json(cache_path, circuits, indent=1)
+                print(f"  cached {len(c['editions'])} editions for circuit {target['circuit_id']}")
+            except RuntimeError as e:
+                print("warning: circuit history unavailable:", e)
+        if c:
+            circuit_history = {"circuit": target["circuit"], **circuit_summary(c["editions"], target["year"])}
+    pole_stats = {"current": season_pole_stats(table, visible, year),
+                  "previous": season_pole_stats(table, visible, year - 1)}
+
     dashboard = {
         "season": year,
         "next_race": next_race,
+        "circuit_history": circuit_history,
+        "pole_stats": pole_stats,
         "prediction": ({"generated_at": prediction["generated_at"], "live": prediction["live"],
                         "order": prediction["order"]} if prediction else None),
         "qualifying": qualifying,

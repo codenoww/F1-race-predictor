@@ -1,0 +1,182 @@
+{
+ "rodriguez": {
+  "fetched": "2026-10-27T16:45:37Z",
+  "editions": [
+   {
+    "year": 1963,
+    "pole": "CLARK",
+    "pole_finish": 1,
+    "winner": "CLARK",
+    "winner_grid": 1
+   },
+   {
+    "year": 1964,
+    "pole": "CLARK",
+    "pole_finish": 5,
+    "winner": "GURNEY",
+    "winner_grid": 2
+   },
+   {
+    "year": 1965,
+    "pole": "CLARK",
+    "pole_finish": 17,
+    "winner": "GINTHER",
+    "winner_grid": 3
+   },
+   {
+    "year": 1966,
+    "pole": "SURTEES",
+    "pole_finish": 1,
+    "winner": "SURTEES",
+    "winner_grid": 1
+   },
+   {
+    "year": 1967,
+    "pole": "CLARK",
+    "pole_finish": 1,
+    "winner": "CLARK",
+    "winner_grid": 1
+   },
+   {
+    "year": 1968,
+    "pole": "SIFFERT",
+    "pole_finish": 6,
+    "winner": "HILL",
+    "winner_grid": 3
+   },
+   {
+    "year": 1969,
+    "pole": "BRABHAM",
+    "pole_finish": 3,
+    "winner": "HULME",
+    "winner_grid": 4
+   },
+   {
+    "year": 1970,
+    "pole": "REGAZZONI",
+    "pole_finish": 2,
+    "winner": "ICKX",
+    "winner_grid": 3
+   },
+   {
+    "year": 1986,
+    "pole": "SENNA",
+    "pole_finish": 3,
+    "winner": "BERGER",
+    "winner_grid": 4
+   },
+   {
+    "year": 1987,
+    "pole": "MANSELL",
+    "pole_finish": 1,
+    "winner": "MANSELL",
+    "winner_grid": 1
+   },
+   {
+    "year": 1988,
+    "pole": "SENNA",
+    "pole_finish": 2,
+    "winner": "PROST",
+    "winner_grid": 2
+   },
+   {
+    "year": 1989,
+    "pole": "SENNA",
+    "pole_finish": 1,
+    "winner": "SENNA",
+    "winner_grid": 1
+   },
+   {
+    "year": 1990,
+    "pole": "BERGER",
+    "pole_finish": 3,
+    "winner": "PROST",
+    "winner_grid": 13
+   },
+   {
+    "year": 1991,
+    "pole": "PATRESE",
+    "pole_finish": 1,
+    "winner": "PATRESE",
+    "winner_grid": 1
+   },
+   {
+    "year": 1992,
+    "pole": "MANSELL",
+    "pole_finish": 1,
+    "winner": "MANSELL",
+    "winner_grid": 1
+   },
+   {
+    "year": 2015,
+    "pole": "ROS",
+    "pole_finish": 1,
+    "winner": "ROS",
+    "winner_grid": 1
+   },
+   {
+    "year": 2016,
+    "pole": "HAM",
+    "pole_finish": 1,
+    "winner": "HAM",
+    "winner_grid": 1
+   },
+   {
+    "year": 2017,
+    "pole": "VET",
+    "pole_finish": 4,
+    "winner": "VER",
+    "winner_grid": 2
+   },
+   {
+    "year": 2018,
+    "pole": "RIC",
+    "pole_finish": 17,
+    "winner": "VER",
+    "winner_grid": 2
+   },
+   {
+    "year": 2019,
+    "pole": "LEC",
+    "pole_finish": 4,
+    "winner": "HAM",
+    "winner_grid": 3
+   },
+   {
+    "year": 2021,
+    "pole": "BOT",
+    "pole_finish": 15,
+    "winner": "VER",
+    "winner_grid": 3
+   },
+   {
+    "year": 2022,
+    "pole": "VER",
+    "pole_finish": 1,
+    "winner": "VER",
+    "winner_grid": 1
+   },
+   {
+    "year": 2023,
+    "pole": "LEC",
+    "pole_finish": 3,
+    "winner": "VER",
+    "winner_grid": 3
+   },
+   {
+    "year": 2024,
+    "pole": "SAI",
+    "pole_finish": 1,
+    "winner": "SAI",
+    "winner_grid": 1
+   },
+   {
+    "year": 2025,
+    "pole": "NOR",
+    "pole_finish": 1,
+    "winner": "NOR",
+    "winner_grid": 1
+   }
+  ]
+ }
+}

@@ -199,6 +199,38 @@ function trackCard(){
   </div>`;
 }
 
+function pct(a, b){ return b ? Math.round(100 * a / b) + '%' : '—'; }
+
+function circuitCard(){
+  const c = D.circuit_history, ps = D.pole_stats;
+  const tiles = [];
+  if(c && c.pole_known){
+    tiles.push(`<div class="tile"><small>Pole won here</small><div class="big">${c.pole_wins} of ${c.pole_known}</div><div class="vs">${pct(c.pole_wins, c.pole_known)} of editions since ${c.since}</div></div>`);
+  }
+  if(c && c.winner_grids_known){
+    tiles.push(`<div class="tile"><small>Winner started top 3</small><div class="big">${c.winner_top3} of ${c.winner_grids_known}</div><div class="vs">average winning grid slot ${c.winner_avg_grid}, furthest back P${c.worst_winning_grid}</div></div>`);
+  }
+  if(ps && ps.current && ps.current.races){
+    const p = ps.previous;
+    tiles.push(`<div class="tile"><small>Pole won this season</small><div class="big">${ps.current.pole_wins} of ${ps.current.races}</div><div class="vs">${pct(ps.current.pole_wins, ps.current.races)}${p && p.races ? ` · last season ${p.pole_wins} of ${p.races} (${pct(p.pole_wins, p.races)})` : ''}</div></div>`);
+  }
+  if(!tiles.length && !(c && c.recent && c.recent.length)) return '';
+  const fin = r => r.pole_finish === 1 ? '<span class="up">won</span>' : r.pole_finish ? 'P' + r.pole_finish : '—';
+  const rows = c && c.recent ? c.recent.map(r => `<tr><td>${r.year}</td><td>${esc(r.pole || '—')}</td><td>${fin(r)}</td><td>${esc(r.winner || '—')}</td><td class="n">${r.winner_grid ? 'P' + r.winner_grid : '—'}</td></tr>`).join('') : '';
+  const note = c && c.pole_known && c.pole_known < 5
+    ? `<p class="caption">Only ${c.pole_known} modern edition${c.pole_known === 1 ? '' : 's'} at this circuit, so treat these numbers with caution.</p>`
+    : (c && !c.editions_total ? '<p class="caption">First race at this circuit, so there is no history yet.</p>' : '');
+  return `<div class="card">
+    <h2>${c ? 'This circuit and pole position' : 'Pole position'}</h2>
+    ${tiles.length ? `<div class="tiles">${tiles.join('')}</div>` : ''}
+    ${note}
+    ${rows ? `<p class="caption">Last editions at ${esc(c.circuit)}. "Pole" is whoever started from the front of the grid.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Year</th><th>Pole-sitter</th><th>Result</th><th>Winner</th><th class="n">Winner's grid</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>` : ''}
+  </div>`;
+}
+
 function standingsCard(){
   const s = D.standings;
   if(!s || !s.drivers || !s.drivers.length) return '';
@@ -225,7 +257,7 @@ function howCard(){
 function render(){
   if(!D) return;
   outState.list = loadOut();
-  $('app').innerHTML = raceCard() + trackCard() + standingsCard() + howCard();
+  $('app').innerHTML = raceCard() + circuitCard() + trackCard() + standingsCard() + howCard();
   $('updated').innerHTML = `<span class="dot"></span>Data changed <b>${rel(D.generated_at)}</b> · checked hourly`;
   $('foot').textContent = `Season ${D.season}`;
   const btn = $('outBtn');
