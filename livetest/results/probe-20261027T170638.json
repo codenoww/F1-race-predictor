@@ -1,0 +1,76 @@
+{
+ "mode": "probe",
+ "at": "2026-10-27T17:06:38Z",
+ "egress": {
+  "org": "AS8075 Microsoft Corporation",
+  "country": "US"
+ },
+ "sessions_listed": 106,
+ "endpoints": {
+  "position": {
+   "status": 200,
+   "ms": 547,
+   "rows": 455,
+   "note": null,
+   "newest": "2026-10-25T21:36:58Z"
+  },
+  "laps": {
+   "status": 200,
+   "ms": 715,
+   "rows": 1166,
+   "note": null,
+   "newest": "2026-10-25T21:39:01Z"
+  },
+  "pit": {
+   "status": 200,
+   "ms": 539,
+   "rows": 32,
+   "note": null,
+   "newest": "2026-10-25T21:30:08Z"
+  },
+  "race_control": {
+   "status": 200,
+   "ms": 388,
+   "rows": 173,
+   "note": null,
+   "newest": "2026-10-25T21:43:10Z"
+  },
+  "weather": {
+   "status": 200,
+   "ms": 375,
+   "rows": 159,
+   "note": null,
+   "newest": "2026-10-25T21:45:33Z"
+  },
+  "intervals": {
+   "status": 200,
+   "ms": 1972,
+   "rows": 24227,
+   "note": null,
+   "newest": "2026-10-25T21:40:41Z"
+  },
+  "stints": {
+   "status": 200,
+   "ms": 368,
+   "rows": 54,
+   "note": null
+  },
+  "session_result": {
+   "status": 200,
+   "ms": 374,
+   "rows": 22,
+   "note": null
+  }
+ },
+ "session": {
+  "key": 11396,
+  "name": "Race",
+  "country": "United States",
+  "end": "2026-10-25T22:00:00+00:00"
+ },
+ "date_filter_test": {
+  "status": 200,
+  "rows": 356
+ },
+ "cors_allow_origin": "*"
+}
