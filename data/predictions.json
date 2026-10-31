@@ -1,1 +1,237 @@
-{}
+{
+ "2026-19": {
+  "generated_at": "2026-10-31T23:21:47Z",
+  "live": true,
+  "order": [
+   {
+    "pos": 1,
+    "driver": "HAM",
+    "team": "Ferrari",
+    "qpos": 1,
+    "score": 4.08
+   },
+   {
+    "pos": 2,
+    "driver": "LEC",
+    "team": "Ferrari",
+    "qpos": 3,
+    "score": 4.97
+   },
+   {
+    "pos": 3,
+    "driver": "VER",
+    "team": "Red Bull",
+    "qpos": 4,
+    "score": 5.5
+   },
+   {
+    "pos": 4,
+    "driver": "RUS",
+    "team": "Mercedes",
+    "qpos": 2,
+    "score": 5.75
+   },
+   {
+    "pos": 5,
+    "driver": "ANT",
+    "team": "Mercedes",
+    "qpos": 5,
+    "score": 6.03
+   },
+   {
+    "pos": 6,
+    "driver": "NOR",
+    "team": "McLaren",
+    "qpos": 6,
+    "score": 7.42
+   },
+   {
+    "pos": 7,
+    "driver": "HAD",
+    "team": "Red Bull",
+    "qpos": 7,
+    "score": 7.9
+   },
+   {
+    "pos": 8,
+    "driver": "LAW",
+    "team": "RB F1 Team",
+    "qpos": 8,
+    "score": 8.67
+   },
+   {
+    "pos": 9,
+    "driver": "LIN",
+    "team": "RB F1 Team",
+    "qpos": 9,
+    "score": 9.86
+   },
+   {
+    "pos": 10,
+    "driver": "GAS",
+    "team": "Alpine F1 Team",
+    "qpos": 10,
+    "score": 10.58
+   },
+   {
+    "pos": 11,
+    "driver": "HUL",
+    "team": "Audi",
+    "qpos": 11,
+    "score": 10.85
+   },
+   {
+    "pos": 12,
+    "driver": "PIA",
+    "team": "McLaren",
+    "qpos": 13,
+    "score": 11.27
+   },
+   {
+    "pos": 13,
+    "driver": "COL",
+    "team": "Alpine F1 Team",
+    "qpos": 12,
+    "score": 12.45
+   },
+   {
+    "pos": 14,
+    "driver": "BOR",
+    "team": "Audi",
+    "qpos": 14,
+    "score": 13.54
+   },
+   {
+    "pos": 15,
+    "driver": "BEA",
+    "team": "Haas F1 Team",
+    "qpos": 15,
+    "score": 14.31
+   },
+   {
+    "pos": 16,
+    "driver": "SAI",
+    "team": "Williams",
+    "qpos": 16,
+    "score": 14.91
+   },
+   {
+    "pos": 17,
+    "driver": "RYO",
+    "team": "Haas F1 Team",
+    "qpos": 19,
+    "score": 15.63
+   },
+   {
+    "pos": 18,
+    "driver": "ALO",
+    "team": "Aston Martin",
+    "qpos": 18,
+    "score": 15.75
+   },
+   {
+    "pos": 19,
+    "driver": "ALB",
+    "team": "Williams",
+    "qpos": 17,
+    "score": 15.84
+   },
+   {
+    "pos": 20,
+    "driver": "STR",
+    "team": "Aston Martin",
+    "qpos": 20,
+    "score": 17.18
+   },
+   {
+    "pos": 21,
+    "driver": "PER",
+    "team": "Cadillac F1 Team",
+    "qpos": 21,
+    "score": 18.34
+   },
+   {
+    "pos": 22,
+    "driver": "BOT",
+    "team": "Cadillac F1 Team",
+    "qpos": 22,
+    "score": 19.06
+   }
+  ],
+  "qualifying": [
+   {
+    "pos": 1,
+    "driver": "HAM",
+    "team": "Ferrari",
+    "gap_pct": 0.0
+   },
+   {
+    "pos": 2,
+    "driver": "RUS",
+    "team": "Mercedes",
+    "gap_pct": 0.012
+   },
+   {
+    "pos": 3,
+    "driver": "LEC",
+    "team": "Ferrari",
+    "gap_pct": 0.156
+   },
+   {
+    "pos": 4,
+    "driver": "VER",
+    "team": "Red Bull",
+    "gap_pct": 0.233
+   },
+   {
+    "pos": 5,
+    "driver": "ANT",
+    "team": "Mercedes",
+    "gap_pct": 0.252
+   },
+   {
+    "pos": 6,
+    "driver": "NOR",
+    "team": "McLaren",
+    "gap_pct": 0.405
+   },
+   {
+    "pos": 7,
+    "driver": "HAD",
+    "team": "Red Bull",
+    "gap_pct": 0.504
+   },
+   {
+    "pos": 8,
+    "driver": "LAW",
+    "team": "RB F1 Team",
+    "gap_pct": 0.673
+   },
+   {
+    "pos": 9,
+    "driver": "LIN",
+    "team": "RB F1 Team",
+    "gap_pct": 0.788
+   },
+   {
+    "pos": 10,
+    "driver": "GAS",
+    "team": "Alpine F1 Team",
+    "gap_pct": 0.835
+   }
+  ],
+  "model": {
+   "name": "Weighted ridge regression (linear)",
+   "ridge_penalty": 0.5,
+   "training_races": 41,
+   "training_rows": 849,
+   "intercept": 5.051,
+   "weights": {
+    "Qualifying gap to pole (% of lap)": 2.091,
+    "Gap to teammate in qualifying (% of lap)": -2.903,
+    "Qualifying position": 11.946,
+    "Average finish, last 3 races": 2.758
+   }
+  }
+ }
+}
