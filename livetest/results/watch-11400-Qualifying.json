@@ -1,0 +1,151 @@
+{
+ "mode": "watch",
+ "final": true,
+ "session": {
+  "key": 11400,
+  "name": "Qualifying",
+  "start": "2026-10-31T21:00:00Z",
+  "end": "2026-10-31T22:00:00Z"
+ },
+ "watched_from": "2026-10-31T23:04:21Z",
+ "watched_until": "2026-11-01T01:00:03Z",
+ "egress": {
+  "org": "AS8075 Microsoft Corporation",
+  "country": "US"
+ },
+ "verdict": {
+  "data_arrived_during_session": false,
+  "near_real_time (median lag < 90 s)": false,
+  "refusals_or_errors": null
+ },
+ "endpoints": {
+  "position": {
+   "polls": 56,
+   "statuses": {
+    "200": 1,
+    "404": 55
+   },
+   "polls_with_new_rows": 1,
+   "rows_new_while_live": 0,
+   "rows_new_after_end": 1133,
+   "first_data_wall": "2026-10-31T23:04:21Z",
+   "median_lag_live_s": null,
+   "max_lag_live_s": null,
+   "median_ms": 467
+  },
+  "laps": {
+   "polls": 56,
+   "statuses": {
+    "200": 1,
+    "404": 55
+   },
+   "polls_with_new_rows": 1,
+   "rows_new_while_live": 0,
+   "rows_new_after_end": 366,
+   "first_data_wall": "2026-10-31T23:04:21Z",
+   "median_lag_live_s": null,
+   "max_lag_live_s": null,
+   "median_ms": 460
+  },
+  "pit": {
+   "polls": 56,
+   "statuses": {
+    "200": 1,
+    "404": 55
+   },
+   "polls_with_new_rows": 1,
+   "rows_new_while_live": 0,
+   "rows_new_after_end": 173,
+   "first_data_wall": "2026-10-31T23:04:21Z",
+   "median_lag_live_s": null,
+   "max_lag_live_s": null,
+   "median_ms": 458
+  },
+  "race_control": {
+   "polls": 56,
+   "statuses": {
+    "200": 1,
+    "404": 55
+   },
+   "polls_with_new_rows": 1,
+   "rows_new_while_live": 0,
+   "rows_new_after_end": 79,
+   "first_data_wall": "2026-10-31T23:04:21Z",
+   "median_lag_live_s": null,
+   "max_lag_live_s": null,
+   "median_ms": 466
+  },
+  "weather": {
+   "polls": 56,
+   "statuses": {
+    "200": 1,
+    "404": 55
+   },
+   "polls_with_new_rows": 1,
+   "rows_new_while_live": 0,
+   "rows_new_after_end": 83,
+   "first_data_wall": "2026-10-31T23:04:21Z",
+   "median_lag_live_s": null,
+   "max_lag_live_s": null,
+   "median_ms": 462
+  }
+ },
+ "results_first_seen": {
+  "openf1_session_result": {
+   "seen_at": "2026-10-31T23:04:21Z",
+   "after_end_s": 3861
+  },
+  "jolpi_results": {
+   "seen_at": "2026-10-31T23:04:21Z",
+   "after_end_s": 3861
+  }
+ },
+ "events_logged": 5,
+ "events": [
+  {
+   "t": "2026-10-31T23:04:21Z",
+   "ep": "position",
+   "phase": "post",
+   "rows": 1133,
+   "newest": "2026-10-31T22:08:35Z",
+   "lag_s": 3345.8,
+   "ms": 590
+  },
+  {
+   "t": "2026-10-31T23:04:21Z",
+   "ep": "laps",
+   "phase": "post",
+   "rows": 366,
+   "newest": "2026-10-31T22:08:56Z",
+   "lag_s": 3324.6,
+   "ms": 532
+  },
+  {
+   "t": "2026-10-31T23:04:21Z",
+   "ep": "pit",
+   "phase": "post",
+   "rows": 173,
+   "newest": "2026-10-31T22:06:13Z",
+   "lag_s": 3487.9,
+   "ms": 491
+  },
+  {
+   "t": "2026-10-31T23:04:21Z",
+   "ep": "race_control",
+   "phase": "post",
+   "rows": 79,
+   "newest": "2026-10-31T22:12:22Z",
+   "lag_s": 3119.3,
+   "ms": 456
+  },
+  {
+   "t": "2026-10-31T23:04:21Z",
+   "ep": "weather",
+   "phase": "post",
+   "rows": 83,
+   "newest": "2026-10-31T22:10:36Z",
+   "lag_s": 3224.8,
+   "ms": 459
+  }
+ ]
+}
