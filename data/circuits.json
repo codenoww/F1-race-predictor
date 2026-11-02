@@ -178,5 +178,304 @@
     "winner_grid": 1
    }
   ]
+ },
+ "interlagos": {
+  "fetched": "2026-11-02T02:29:09Z",
+  "editions": [
+   {
+    "year": 1973,
+    "pole": "PETERSON",
+    "pole_finish": 18,
+    "winner": "FITTIPALDI",
+    "winner_grid": 2
+   },
+   {
+    "year": 1974,
+    "pole": "FITTIPALDI",
+    "pole_finish": 1,
+    "winner": "FITTIPALDI",
+    "winner_grid": 1
+   },
+   {
+    "year": 1975,
+    "pole": "JARIER",
+    "pole_finish": 16,
+    "winner": "PACE",
+    "winner_grid": 6
+   },
+   {
+    "year": 1976,
+    "pole": "HUNT",
+    "pole_finish": 16,
+    "winner": "LAUDA",
+    "winner_grid": 2
+   },
+   {
+    "year": 1977,
+    "pole": "HUNT",
+    "pole_finish": 2,
+    "winner": "REUTEMANN",
+    "winner_grid": 2
+   },
+   {
+    "year": 1979,
+    "pole": "LAFFITE",
+    "pole_finish": 1,
+    "winner": "LAFFITE",
+    "winner_grid": 1
+   },
+   {
+    "year": 1980,
+    "pole": "JABOUILLE",
+    "pole_finish": 18,
+    "winner": "ARNOUX",
+    "winner_grid": 6
+   },
+   {
+    "year": 1990,
+    "pole": "SENNA",
+    "pole_finish": 3,
+    "winner": "PROST",
+    "winner_grid": 6
+   },
+   {
+    "year": 1991,
+    "pole": "SENNA",
+    "pole_finish": 1,
+    "winner": "SENNA",
+    "winner_grid": 1
+   },
+   {
+    "year": 1992,
+    "pole": "MANSELL",
+    "pole_finish": 1,
+    "winner": "MANSELL",
+    "winner_grid": 1
+   },
+   {
+    "year": 1993,
+    "pole": "PROST",
+    "pole_finish": 16,
+    "winner": "SENNA",
+    "winner_grid": 3
+   },
+   {
+    "year": 1994,
+    "pole": "SENNA",
+    "pole_finish": 13,
+    "winner": "MSC",
+    "winner_grid": 2
+   },
+   {
+    "year": 1995,
+    "pole": "HILL",
+    "pole_finish": 16,
+    "winner": "MSC",
+    "winner_grid": 2
+   },
+   {
+    "year": 1996,
+    "pole": "HILL",
+    "pole_finish": 1,
+    "winner": "HILL",
+    "winner_grid": 1
+   },
+   {
+    "year": 1997,
+    "pole": "VIL",
+    "pole_finish": 1,
+    "winner": "VIL",
+    "winner_grid": 1
+   },
+   {
+    "year": 1998,
+    "pole": "HÄKKINEN",
+    "pole_finish": 1,
+    "winner": "HÄKKINEN",
+    "winner_grid": 1
+   },
+   {
+    "year": 1999,
+    "pole": "HÄKKINEN",
+    "pole_finish": 1,
+    "winner": "HÄKKINEN",
+    "winner_grid": 1
+   },
+   {
+    "year": 2000,
+    "pole": "HÄKKINEN",
+    "pole_finish": 14,
+    "winner": "MSC",
+    "winner_grid": 3
+   },
+   {
+    "year": 2001,
+    "pole": "MSC",
+    "pole_finish": 2,
+    "winner": "COU",
+    "winner_grid": 5
+   },
+   {
+    "year": 2002,
+    "pole": "MON",
+    "pole_finish": 5,
+    "winner": "MSC",
+    "winner_grid": 2
+   },
+   {
+    "year": 2003,
+    "pole": "BAR",
+    "pole_finish": 11,
+    "winner": "FIS",
+    "winner_grid": 8
+   },
+   {
+    "year": 2004,
+    "pole": "BAR",
+    "pole_finish": 3,
+    "winner": "MON",
+    "winner_grid": 2
+   },
+   {
+    "year": 2005,
+    "pole": "ALO",
+    "pole_finish": 3,
+    "winner": "MON",
+    "winner_grid": 2
+   },
+   {
+    "year": 2006,
+    "pole": "MAS",
+    "pole_finish": 1,
+    "winner": "MAS",
+    "winner_grid": 1
+   },
+   {
+    "year": 2007,
+    "pole": "MAS",
+    "pole_finish": 2,
+    "winner": "RAI",
+    "winner_grid": 3
+   },
+   {
+    "year": 2008,
+    "pole": "MAS",
+    "pole_finish": 1,
+    "winner": "MAS",
+    "winner_grid": 1
+   },
+   {
+    "year": 2009,
+    "pole": "BAR",
+    "pole_finish": 8,
+    "winner": "WEB",
+    "winner_grid": 2
+   },
+   {
+    "year": 2010,
+    "pole": "HUL",
+    "pole_finish": 8,
+    "winner": "VET",
+    "winner_grid": 2
+   },
+   {
+    "year": 2011,
+    "pole": "VET",
+    "pole_finish": 2,
+    "winner": "WEB",
+    "winner_grid": 2
+   },
+   {
+    "year": 2012,
+    "pole": "HAM",
+    "pole_finish": 20,
+    "winner": "BUT",
+    "winner_grid": 2
+   },
+   {
+    "year": 2013,
+    "pole": "VET",
+    "pole_finish": 1,
+    "winner": "VET",
+    "winner_grid": 1
+   },
+   {
+    "year": 2014,
+    "pole": "ROS",
+    "pole_finish": 1,
+    "winner": "ROS",
+    "winner_grid": 1
+   },
+   {
+    "year": 2015,
+    "pole": "ROS",
+    "pole_finish": 1,
+    "winner": "ROS",
+    "winner_grid": 1
+   },
+   {
+    "year": 2016,
+    "pole": "HAM",
+    "pole_finish": 1,
+    "winner": "HAM",
+    "winner_grid": 1
+   },
+   {
+    "year": 2017,
+    "pole": "BOT",
+    "pole_finish": 2,
+    "winner": "VET",
+    "winner_grid": 2
+   },
+   {
+    "year": 2018,
+    "pole": "HAM",
+    "pole_finish": 1,
+    "winner": "HAM",
+    "winner_grid": 1
+   },
+   {
+    "year": 2019,
+    "pole": "VER",
+    "pole_finish": 1,
+    "winner": "VER",
+    "winner_grid": 1
+   },
+   {
+    "year": 2021,
+    "pole": "BOT",
+    "pole_finish": 3,
+    "winner": "HAM",
+    "winner_grid": 10
+   },
+   {
+    "year": 2022,
+    "pole": "RUS",
+    "pole_finish": 1,
+    "winner": "RUS",
+    "winner_grid": 1
+   },
+   {
+    "year": 2023,
+    "pole": "VER",
+    "pole_finish": 1,
+    "winner": "VER",
+    "winner_grid": 1
+   },
+   {
+    "year": 2024,
+    "pole": "NOR",
+    "pole_finish": 6,
+    "winner": "VER",
+    "winner_grid": 17
+   },
+   {
+    "year": 2025,
+    "pole": "NOR",
+    "pole_finish": 1,
+    "winner": "NOR",
+    "winner_grid": 1
+   }
+  ]
  }
 }
