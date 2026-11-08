@@ -477,5 +477,31 @@
     "winner_grid": 1
    }
   ]
+ },
+ "vegas": {
+  "fetched": "2026-11-08T21:08:31Z",
+  "editions": [
+   {
+    "year": 2023,
+    "pole": "LEC",
+    "pole_finish": 2,
+    "winner": "VER",
+    "winner_grid": 2
+   },
+   {
+    "year": 2024,
+    "pole": "RUS",
+    "pole_finish": 1,
+    "winner": "RUS",
+    "winner_grid": 1
+   },
+   {
+    "year": 2025,
+    "pole": "NOR",
+    "pole_finish": 19,
+    "winner": "VER",
+    "winner_grid": 2
+   }
+  ]
  }
 }
