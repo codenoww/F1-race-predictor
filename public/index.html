@@ -91,6 +91,11 @@
   details summary{cursor:pointer;color:var(--teal);font-size:.8rem;letter-spacing:1px;text-transform:uppercase}
   details p,details li{color:var(--muted);font-size:.8rem}
   .err{color:#ff7a82}
+  .tyre{display:inline-block;border:1px solid;padding:0 5px;font-weight:700;font-size:.72rem}
+  .pw{color:var(--amber);font-size:.68rem;letter-spacing:1px;border:1px solid #6b4a10;padding:0 5px;white-space:nowrap}
+  .sw{display:inline-block;width:4px;height:12px;margin-right:7px;vertical-align:middle}
+  .rcl{font-size:.74rem;color:var(--muted);padding:2px 0;border-bottom:1px dotted var(--line)}
+  .rcl span{color:var(--teal);margin-right:6px}.rcl b{color:var(--amber)}
   footer{color:var(--muted);font-size:.7rem;text-align:center;margin-top:22px;letter-spacing:2px;text-transform:uppercase}
 </style>
 </head>
@@ -104,6 +109,7 @@
     <div class="pill" id="updated">Loading…</div>
   </header>
   <div class="status" id="status"></div>
+  <div id="live"></div>
   <div id="app"><div class="card">Loading the latest data…</div></div>
   <footer id="foot"></footer>
 </div>
@@ -317,6 +323,180 @@ function cd(iso){
 setInterval(() => document.querySelectorAll('[data-t]').forEach(e => { if(e.dataset.t) e.textContent = cd(e.dataset.t); }), 1000);
 load();
 setInterval(load, REFRESH_MS);
+
+/* ===================== LIVE TIMING PANEL (OpenF1, browser -> API directly) =====================
+   Shows nothing but a quiet status line unless a session is on. Never touches the frozen prediction.
+   Debug/replay a past session:  ?replay=<session_key>&at=2026-11-08T18:00:00   (clock starts at that UTC time) */
+const OF1 = 'https://api.openf1.org/v1';
+const QP = new URLSearchParams(location.search);
+const REPLAY = QP.get('replay'), REPLAY_AT = QP.get('at');
+const REPLAY_OFF = REPLAY && REPLAY_AT ? Date.parse(REPLAY_AT + 'Z') - Date.now() : 0;
+const clock = () => new Date(Date.now() + REPLAY_OFF);
+const naive = d => d.toISOString().slice(0, 19);
+const TYRE = {SOFT:['S','#ff4d4d',18], MEDIUM:['M','#ffd24a',26], HARD:['H','#e8f4f6',34], INTERMEDIATE:['I','#2cff9a',22], WET:['W','#19a8ff',20]};
+let L = null;
+const lnew = sk => ({sk, dr:{}, pos:{}, lastPos:null, gap:{}, stints:{}, pit:{}, lap:{}, best:{}, wx:null, rc:[], lastRc:null, ok:null, err:null, ready:false});
+
+async function of(path){
+  try{
+    const r = await fetch(OF1 + path);
+    if(r.status === 404) return {s:404, d:[]};
+    if(!r.ok) return {s:r.status, d:null};
+    return {s:200, d:await r.json()};
+  }catch(e){ return {s:0, d:null}; }
+}
+const upTo = () => REPLAY ? `&date<=${naive(clock())}` : '';
+
+let sessions = [], cur = null, nxt = null, sessErr = null, lastSessFetch = 0;
+async function pickSession(){
+  if(Date.now() - lastSessFetch > 10 * 60e3 || !sessions.length){
+    lastSessFetch = Date.now();
+    const r = await of(REPLAY ? `/sessions?session_key=${REPLAY}` : `/sessions?year=${clock().getUTCFullYear()}`);
+    if(r.d) { sessions = r.d; sessErr = null; } else sessErr = r.s;
+  }
+  const t = clock().getTime();
+  cur = sessions.find(s => t >= Date.parse(s.date_start) - 10 * 60e3 && t <= Date.parse(s.date_end) + 20 * 60e3) || null;
+  nxt = sessions.filter(s => Date.parse(s.date_start) > t).sort((a, b) => Date.parse(a.date_start) - Date.parse(b.date_start))[0] || null;
+}
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+async function initSession(){
+  const k = cur.session_key;
+  const nl = lnew(k);
+  const steps = [
+    [`/drivers?session_key=${k}`, r => (r || []).forEach(d => nl.dr[d.driver_number] = {code:d.name_acronym, team:d.team_name, col:'#' + (d.team_colour || '888888')})],
+    [`/laps?session_key=${k}${REPLAY ? `&date_start<=${naive(clock())}` : ''}`, r => { L = nl; ingestLaps(r || []); }],
+    [`/race_control?session_key=${k}${upTo()}`, r => { L = nl; ingestRc(r || []); }],
+    [`/position?session_key=${k}${upTo()}`, r => { L = nl; ingestPos(r || []); }],
+  ];
+  L = nl;
+  for(const [path, fn] of steps){
+    let res = await of(path);
+    if(res.d === null){ await sleep(20e3); res = await of(path); }   // one patient retry (rate limit)
+    if(res.d === null){ L = null; return; }
+    fn(res.d);
+    await sleep(1500);
+  }
+  L.ready = true;
+}
+function ingestPos(rows){ rows.forEach(r => { L.pos[r.driver_number] = r.position; if(!L.lastPos || r.date > L.lastPos) L.lastPos = r.date; }); }
+function ingestLaps(rows){
+  rows.forEach(r => {
+    const n = r.driver_number;
+    if(r.lap_number && (!L.lap[n] || r.lap_number > L.lap[n])) L.lap[n] = r.lap_number;
+    if(r.lap_duration && !r.is_pit_out_lap && (!L.best[n] || r.lap_duration < L.best[n])) L.best[n] = r.lap_duration;
+  });
+}
+function ingestRc(rows){
+  rows.forEach(r => { if(!L.lastRc || r.date > L.lastRc) L.lastRc = r.date; });
+  L.rc = L.rc.concat(rows).slice(-60);
+}
+
+/* OpenF1's free tier allows about 30 requests a minute, so we send ONE request every 3 s and rotate through the data types. */
+const EPS = ['pos', 'int', 'laps', 'stints', 'pit', 'wx', 'rc'];
+let rr = 0, backoffUntil = 0;
+async function pollOne(){
+  if(Date.now() < backoffUntil) return;
+  const k = cur.session_key, t = clock(), win = naive(new Date(t - 90e3)), win3 = naive(new Date(t - 5 * 60e3));
+  const ep = EPS[rr++ % EPS.length];
+  const path = {
+    pos: `/position?session_key=${k}&date>${(L.lastPos || '').slice(0, 19) || win3}${upTo()}`,
+    int: `/intervals?session_key=${k}&date>=${win}${upTo()}`,
+    laps: `/laps?session_key=${k}&date_start>=${win3}${REPLAY ? `&date_start<=${naive(t)}` : ''}`,
+    stints: `/stints?session_key=${k}`,
+    pit: `/pit?session_key=${k}${upTo()}`,
+    wx: `/weather?session_key=${k}&date>=${win3}${upTo()}`,
+    rc: `/race_control?session_key=${k}&date>${(L.lastRc || naive(new Date(t - 60e3))).slice(0, 19)}${upTo()}`,
+  }[ep];
+  const r = await of(path);
+  if(r.d === null){
+    L.err = r.s;
+    if(r.s === 429 || r.s === 0) backoffUntil = Date.now() + 25e3;
+    return;
+  }
+  L.err = null; L.ok = Date.now();
+  const d = r.d;
+  if(ep === 'pos') ingestPos(d);
+  else if(ep === 'laps') ingestLaps(d);
+  else if(ep === 'rc') ingestRc(d);
+  else if(ep === 'int') d.forEach(x => L.gap[x.driver_number] = {gap:x.gap_to_leader, int:x.interval});
+  else if(ep === 'stints'){ L.stints = {}; d.forEach(s => (L.stints[s.driver_number] = L.stints[s.driver_number] || []).push(s)); }
+  else if(ep === 'pit'){ L.pit = {}; d.forEach(p => { const e = L.pit[p.driver_number] || (L.pit[p.driver_number] = {n:0}); e.n++; }); }
+  else if(ep === 'wx' && d.length) L.wx = d[d.length - 1];
+}
+
+const fmtGap = g => g == null ? '—' : g === 0 ? 'LEADER' : typeof g === 'number' ? '+' + g.toFixed(3) : String(g);
+const fmtLap = s => { if(!s) return '—'; const m = Math.floor(s / 60); return m + ':' + (s - 60 * m).toFixed(3).padStart(6, '0'); };
+
+function liveHtml(){
+  const chip = REPLAY ? '<span class="chip warn">replay</span>' : '<span class="chip live">live</span>';
+  const head = `<h2>Live timing · ${esc(cur.session_name)} · ${esc(cur.circuit_short_name || cur.location || '')} ${chip}</h2>`;
+  if(!L || !L.ready) return `<div class="card">${head}<div class="meta">connecting to OpenF1…</div></div>`;
+  if(L.err && !L.ok) return `<div class="card">${head}<div class="notice fb"><b>OPENF1 ERROR HTTP ${L.err || 'network'}:</b> live data isn't reachable right now${[401, 403, 429].includes(L.err) ? ' (OpenF1 may be restricting live access)' : ''}. Retrying every few seconds. Saved results and the prediction below are unaffected.</div></div>`;
+  const raceLike = /^(Race|Sprint)$/.test(cur.session_name);
+  const nums = Object.keys(L.dr);
+  let order;
+  if(raceLike) order = nums.filter(n => L.pos[n]).sort((a, b) => L.pos[a] - L.pos[b]);
+  else order = nums.filter(n => L.best[n]).sort((a, b) => L.best[a] - L.best[b]);
+  const lead = order.length ? L.best[order[0]] : null;
+  const maxLap = Math.max(0, ...Object.values(L.lap));
+  const ago = L.ok ? Math.round((Date.now() - L.ok) / 1000) : null;
+  let podiumNow = '', pits = '';
+  const rows = order.map((n, i) => {
+    const d = L.dr[n], pit = L.pit[n];
+    const lap = L.lap[n] || maxLap;
+    const st = ((L.stints || {})[n] || []).filter(x => x.lap_start <= lap).sort((a, b) => b.lap_start - a.lap_start)[0];
+    let tyre = '—', flag = '';
+    if(st && st.lap_start <= lap){
+      const T = TYRE[(st.compound || '').toUpperCase()] || ['?', '#9ab', 25];
+      const age = (st.tyre_age_at_start || 0) + Math.max(0, lap - st.lap_start);
+      tyre = `<span class="tyre" style="color:${T[1]};border-color:${T[1]}">${T[0]}</span> ${age}L`;
+      if(raceLike && age >= 0.8 * T[2]){ const left = Math.max(0, Math.round(T[2] - age)); flag = ` <span class="pw">PIT WINDOW ~${left}L</span>`; }
+    }
+    const g = L.gap[n];
+    const gapCell = raceLike ? fmtGap(g && g.gap) : (i ? '+' + (L.best[n] - lead).toFixed(3) : fmtLap(lead));
+    const intCell = raceLike ? fmtGap(g && g.int) : fmtLap(L.best[n]);
+    return `<tr><td>${i + 1}</td><td><span class="sw" style="background:${d.col}"></span>${esc(d.code)}</td><td>${esc(d.team)}</td><td class="n">${gapCell}</td><td class="n">${intCell}</td><td class="cell">${tyre}${flag}</td><td class="n">${pit ? pit.n : 0}</td></tr>`;
+  }).join('');
+  if(raceLike && D && D.prediction && !D.prediction.provisional){
+    const now3 = order.slice(0, 3).map(n => L.dr[n].code), pre = D.prediction.order.slice(0, 3).map(o => o.driver);
+    podiumNow = `<div class="tiles" style="margin-top:12px"><div class="tile"><small>Pre-race pick (frozen)</small><div class="big">${pre.map(d => `<span class="tag ${now3.includes(d) ? 'hit' : ''}">${esc(d)}</span>`).join('')}</div></div>
+      <div class="tile"><small>Running top 3 right now</small><div class="big">${now3.map(d => esc(d)).join(' · ')}</div><div class="vs">green = pre-race pick currently on the podium</div></div></div>`;
+  }
+  const w = L.wx ? `<span>AIR <b>${L.wx.air_temperature}°</b></span><span>TRACK <b>${L.wx.track_temperature}°</b></span><span>RAIN <b>${L.wx.rainfall ? 'YES' : 'NO'}</b></span><span>WIND <b>${L.wx.wind_speed} m/s</b></span><span>HUM <b>${L.wx.humidity}%</b></span>` : '';
+  const rc = L.rc.slice(-5).reverse().map(r => `<div class="rcl"><span>${esc((r.date || '').slice(11, 19))}</span> ${r.flag ? `<b>${esc(r.flag)}</b> ` : ''}${esc(r.message || '')}</div>`).join('');
+  return `<div class="card">${head}
+    <div class="status" style="margin-bottom:10px"><span>LAP <b>${maxLap || '—'}</b></span>${w}<span>UPDATED <b>${ago == null ? '—' : ago + 's ago'}</b></span>${L.err ? `<span class="down">LINK ISSUE HTTP ${L.err || 'net'} · showing last data, retrying</span>` : ''}</div>
+    <div class="scroll"><table><thead><tr><th>Pos</th><th>Driver</th><th>Team</th><th class="n">${raceLike ? 'Gap to leader' : 'Gap to best'}</th><th class="n">${raceLike ? 'Interval' : 'Best lap'}</th><th>Tyre</th><th class="n">Pits</th></tr></thead><tbody>${rows || '<tr><td colspan="7" class="same">waiting for the first timing data…</td></tr>'}</tbody></table></div>
+    ${podiumNow}
+    ${rc ? `<p class="caption" style="margin:12px 0 6px">RACE CONTROL</p>${rc}` : ''}
+    <p class="caption" style="margin-top:10px">Straight from OpenF1 to your browser while this page is open. Each data type refreshes about every 20 s because OpenF1's free tier limits request rates. "Pit window" is a rule of thumb (tyre age vs a typical stint length), not a prediction from team radio. The frozen pre-race prediction is never changed by this panel.</p>
+  </div>`;
+}
+function idleHtml(){
+  const n = nxt ? `${esc(nxt.session_name)} · ${esc(nxt.circuit_short_name || '')} <i data-t="${nxt.date_start}" style="color:var(--teal);font-style:normal">${cd(nxt.date_start)}</i>` : 'none scheduled';
+  const e = sessErr ? ` <span class="down">(OpenF1 unreachable: HTTP ${sessErr || 'network'})</span>` : '';
+  return `<div class="status"><span>LIVE TIMING <b style="color:var(--muted)">STANDBY</b></span><span>NEXT SESSION <b style="color:var(--teal)">${n}</b></span>${e}</div>`;
+}
+
+async function liveTick(){
+  let delay = 30e3;
+  try{
+    await pickSession();
+    const box = document.getElementById('live');
+    if(cur){
+      if(!L || L.sk !== cur.session_key) await initSession();
+      if(L){ await pollOne(); delay = 3e3; }
+      box.innerHTML = liveHtml();
+    } else {
+      L = null;
+      box.innerHTML = idleHtml();
+    }
+  }catch(e){ console.warn('live panel', e); }
+  setTimeout(liveTick, delay);
+}
+setTimeout(liveTick, 1500);
+
 </script>
 </body>
 </html>
