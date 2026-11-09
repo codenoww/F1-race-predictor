@@ -116,6 +116,72 @@ def fetch_results(year, rnd):
     return compact_results(races[0]["Results"]) if races else []
 
 
+OPENF1 = "https://api.openf1.org/v1"
+
+
+def openf1_get(path, tries=4):
+    last = "no attempt"
+    for attempt in range(tries):
+        try:
+            r = _session.get(f"{OPENF1}/{path}", timeout=30)
+            if r.status_code == 200:
+                return r.json()
+            if r.status_code == 404:  # OpenF1 answers 404 when there is simply no data yet
+                return []
+            last = f"HTTP {r.status_code}"
+        except (requests.RequestException, ValueError) as e:
+            last = type(e).__name__
+        if attempt < tries - 1:
+            time.sleep(min(30, 3 * 2 ** attempt))
+    raise RuntimeError(f"openf1 {path}: {last} after {tries} tries")
+
+
+def fmt_lap(sec):
+    if not sec:
+        return ""
+    m = int(sec // 60)
+    return f"{m}:{sec - 60 * m:06.3f}"
+
+
+def fill_times_from_openf1(q, quali_start, year):
+    """Backup source for qualifying lap times. jolpi sometimes publishes the grid order for a day or
+    more without any Q1/Q2/Q3 times; OpenF1 usually has them about an hour after the session.
+    Fills `q` in place and returns True only if usable times were added and pole agrees with jolpi."""
+    if not quali_start:
+        return False
+    try:
+        sessions = openf1_get(f"sessions?year={year}&session_name=Qualifying")
+        near = [s for s in sessions
+                if abs(datetime.fromisoformat(s["date_start"]) - quali_start) < timedelta(hours=36)]
+        if not near:
+            return False
+        sk = near[0]["session_key"]
+        code_of = {d["driver_number"]: d["name_acronym"] for d in openf1_get(f"drivers?session_key={sk}")}
+        results = openf1_get(f"session_result?session_key={sk}")
+    except (RuntimeError, KeyError, ValueError) as e:
+        print("  openf1 qualifying times unavailable:", e)
+        return False
+    times = {}
+    for r in results:
+        dur = r.get("duration")
+        code = code_of.get(r.get("driver_number"))
+        if code and isinstance(dur, list):
+            times[code] = [fmt_lap(v) if isinstance(v, (int, float)) else "" for v in (dur + [None] * 3)[:3]]
+    if sum(1 for x in q if x["d"] in times) < MIN_QUALI_ROWS:
+        return False
+    # sanity check: the fastest final-session lap must belong to jolpi's pole-sitter
+    pole = next((x["d"] for x in q if x["p"] == 1), None)
+    best = min(((secs(next((t for t in reversed(v) if t), "")) or 1e9, c) for c, v in times.items()))[1]
+    if pole and best != pole:
+        print(f"  openf1 times rejected: fastest is {best} but jolpi pole is {pole}")
+        return False
+    for x in q:
+        t = times.get(x["d"])
+        if t:
+            x["q1"], x["q2"], x["q3"] = t
+    return usable_quali(q)
+
+
 def driver_label(d):
     """Short name for display; older drivers have no 3-letter code, so use their surname."""
     return d.get("code") or d.get("familyName", d["driverId"]).upper()[:12]
@@ -388,6 +454,14 @@ def main():
     history = {k: v for k, v in history.items() if key_tuple(k)[0] >= year - 1}
     print(f"history: {len(history)} races ({fetched} newly fetched)")
 
+    # repair: a race whose qualifying order is known but has no lap times (jolpi is sometimes slow)
+    # gets its times from OpenF1; otherwise it would silently never be scored.
+    quali_starts = {r["key"]: r["quali_start"] for s in schedules.values() for r in s}
+    for k, v in history.items():
+        if len(v["q"]) >= MIN_QUALI_ROWS and not usable_quali(v["q"]) and v["res"]:
+            if fill_times_from_openf1(v["q"], quali_starts.get(k), key_tuple(k)[0]):
+                print(f"  filled qualifying lap times for {k} {v['name']} from OpenF1")
+
     # races that count as completed *as of now*, with usable qualifying times
     visible = sorted(
         (k for k, v in history.items()
@@ -416,6 +490,9 @@ def main():
             except RuntimeError as e:
                 q = []
                 print("could not fetch target qualifying:", e)
+            if len(q) >= MIN_QUALI_ROWS and not usable_quali(q):
+                if fill_times_from_openf1(q, target["quali_start"], target["year"]):
+                    print("  qualifying lap times taken from OpenF1 (jolpi has none yet)")
             if len(q) >= MIN_QUALI_ROWS and not usable_quali(q):
                 # Fallback: the grid order is published but the lap times are not yet. Show the
                 # grid order as a clearly labelled provisional podium. It is never frozen or scored.
