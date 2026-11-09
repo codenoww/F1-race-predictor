@@ -409,12 +409,21 @@ def main():
             status = "waiting_for_qualifying"
         else:
             status = "waiting_for_qualifying"
+        provisional = None
         if k not in predictions and (target["quali_start"] is None or now >= target["quali_start"]):
             try:
                 q = fetch_quali(target["year"], target["round"])
             except RuntimeError as e:
                 q = []
                 print("could not fetch target qualifying:", e)
+            if len(q) >= MIN_QUALI_ROWS and not usable_quali(q):
+                # Fallback: the grid order is published but the lap times are not yet. Show the
+                # grid order as a clearly labelled provisional podium. It is never frozen or scored.
+                provisional = {"generated_at": iso(now), "live": bool(now < target["start"]), "provisional": True,
+                               "order": [{"driver": x["d"], "team": x["tn"], "qpos": x["p"]}
+                                         for x in sorted(q, key=lambda x: x["p"])]}
+                print("  qualifying has no lap times yet; showing provisional grid-order podium:",
+                      [o["driver"] for o in provisional["order"][:3]])
             if usable_quali(q):
                 rows = race_features(q)
                 for r in rows:
@@ -436,6 +445,9 @@ def main():
         if k in predictions:
             prediction, qualifying = predictions[k], predictions[k]["qualifying"]
             status = "in_progress" if now >= target["start"] else "predicted"
+        elif provisional:
+            prediction = provisional
+            status = "in_progress" if now >= target["start"] else "provisional"
 
     # ---- track record for the current season (live if frozen, else walk-forward backtest)
     rows_out = []
@@ -531,6 +543,7 @@ def main():
         "circuit_history": circuit_history,
         "pole_stats": pole_stats,
         "prediction": ({"generated_at": prediction["generated_at"], "live": prediction["live"],
+                        "provisional": bool(prediction.get("provisional")),
                         "order": prediction["order"]} if prediction else None),
         "qualifying": qualifying,
         "track_record": track,

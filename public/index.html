@@ -6,82 +6,104 @@
 <title>F1 Podium Predictor</title>
 <style>
   :root{
-    --bg:#0b0b0d; --panel:#141417; --panel2:#1b1b20; --line:#2a2a31;
-    --text:#ececf0; --muted:#9a9aa6; --red:#e10600; --gold:#ffd24a; --green:#3ddc97; --amber:#ffb454; --teal:#27f4d2;
+    --bg:#05070a; --panel:#0a0f14; --panel2:#0e1620; --line:#17323a; --line2:#1f4a55;
+    --text:#cfe9ee; --muted:#6b8a93; --red:#ff2d3a; --gold:#ffc83d; --green:#2cff9a; --amber:#ffb020; --teal:#19e3ff;
+    --mono:ui-monospace,"Cascadia Code","JetBrains Mono",Consolas,Menlo,monospace;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 -apple-system,Segoe UI,Roboto,sans-serif;padding:28px 14px 60px}
-  .wrap{max-width:860px;margin:0 auto}
-  header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px;margin-bottom:18px}
-  h1{margin:0;font-size:1.5rem;letter-spacing:.4px}
-  h1 span{color:var(--red)}
-  .sub{color:var(--muted);font-size:.85rem;margin-top:2px}
-  .pill{font-size:.75rem;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:5px 11px;white-space:nowrap}
-  .pill b{color:var(--text);font-weight:600}
-  .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:6px;vertical-align:middle}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:16px}
-  .card h2{margin:0 0 12px;font-size:.78rem;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);font-weight:600}
-  .race-name{font-size:1.5rem;font-weight:700}
-  .chip{display:inline-block;font-size:.7rem;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-left:6px;vertical-align:middle;font-weight:400}
-  .chip.live{color:var(--green);border-color:#2a5a47}
-  .chip.warn{color:var(--amber);border-color:#5a4524}
+  body{margin:0;background:var(--bg);color:var(--text);font:13px/1.5 var(--mono);padding:22px 14px 60px;
+    background-image:linear-gradient(rgba(25,227,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(25,227,255,.035) 1px,transparent 1px);background-size:32px 32px}
+  body:after{content:"";position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(transparent 0 2px,rgba(0,0,0,.18) 2px 3px);z-index:9}
+  .wrap{max-width:940px;margin:0 auto}
+  header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px;margin-bottom:12px;border-bottom:1px solid var(--line2);padding-bottom:12px}
+  h1{margin:0;font-size:1.25rem;letter-spacing:3px;text-transform:uppercase;font-weight:700}
+  h1 span{color:var(--red);text-shadow:0 0 10px rgba(255,45,58,.7)}
+  .sub{color:var(--muted);font-size:.78rem;margin-top:3px}
+  .cursor{display:inline-block;width:8px;height:14px;background:var(--teal);vertical-align:middle;margin-left:4px;animation:blink 1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+  .pill{font-size:.72rem;color:var(--muted);border:1px solid var(--line2);padding:5px 10px;white-space:nowrap;background:var(--panel)}
+  .pill b{color:var(--teal);font-weight:600}
+  .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);margin-right:7px;vertical-align:middle;animation:pulse 2s infinite}
+  @keyframes pulse{50%{opacity:.35}}
+  .status{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:.72rem;color:var(--muted);margin-bottom:16px;text-transform:uppercase;letter-spacing:1px}
+  .status b{color:var(--green)}
+  .card{background:var(--panel);border:1px solid var(--line);padding:16px 18px;margin-bottom:14px;position:relative}
+  .card:before,.card:after{content:"";position:absolute;width:10px;height:10px;border:1px solid var(--teal)}
+  .card:before{top:-1px;left:-1px;border-right:0;border-bottom:0}
+  .card:after{bottom:-1px;right:-1px;border-left:0;border-top:0}
+  .card h2{margin:0 0 12px;font-size:.72rem;letter-spacing:2px;text-transform:uppercase;color:var(--teal);font-weight:600}
+  .card h2:before{content:"> ";color:var(--muted)}
+  .race-name{font-size:1.4rem;font-weight:700;text-transform:uppercase;letter-spacing:1px}
+  .chip{display:inline-block;font-size:.65rem;padding:1px 7px;border:1px solid var(--line2);color:var(--muted);margin-left:6px;vertical-align:middle;font-weight:400;letter-spacing:1px;text-transform:uppercase}
+  .chip.live{color:var(--green);border-color:#17613f}
+  .chip.warn{color:var(--amber);border-color:#6b4a10}
   .meta{color:var(--muted);margin-top:4px}
-  .times{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:14px}
-  .time{background:var(--panel2);border-radius:10px;padding:10px 12px}
-  .time small{display:block;color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.8px}
-  .time b{display:block;margin-top:2px}
-  .time i{color:var(--muted);font-style:normal;font-size:.8rem}
-  .notice{margin-top:14px;padding:12px 14px;border-radius:10px;background:#1c1a12;border:1px solid #3a3320;color:#e8dcb4;font-size:.88rem}
-  .podium{display:flex;gap:10px;align-items:flex-end;margin:16px 0 14px}
-  .step{flex:1;text-align:center;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px 8px}
-  .step.p1{order:2;padding-top:24px;border-color:#6b5a1f}
-  .step.p2{order:1}.step.p3{order:3}
-  .medal{font-size:1.5rem}
-  .drv{font-size:1.2rem;font-weight:800;margin-top:2px}
-  .team{font-size:.75rem;color:var(--muted)}
-  .qtag{font-size:.7rem;color:var(--muted);margin-top:4px}
-  table{width:100%;border-collapse:collapse;font-size:.86rem}
-  th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line)}
-  th{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;font-weight:600}
+  .times{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin-top:14px}
+  .time{background:var(--panel2);border:1px solid var(--line);padding:10px 12px}
+  .time small{display:block;color:var(--muted);font-size:.66rem;text-transform:uppercase;letter-spacing:1.5px}
+  .time b{display:block;margin-top:2px;font-weight:600}
+  .time i{color:var(--teal);font-style:normal;font-size:1.05rem;letter-spacing:1px;text-shadow:0 0 8px rgba(25,227,255,.5)}
+  .notice{margin-top:14px;padding:12px 14px;background:#140f05;border:1px solid #5a3f0c;color:#ffd78a;font-size:.82rem}
+  .notice:before{content:"[WAIT] ";color:var(--amber);font-weight:700}
+  .notice.fb{margin:14px 0 0}
+  .notice.fb:before{content:""}
+  .notice.fb b{color:var(--amber);letter-spacing:1px}
+  .podium{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0 14px}
+  .step{text-align:left;background:var(--panel2);border:1px solid var(--line2);border-top:2px solid var(--muted);padding:12px 14px}
+  .step.p1{border-top-color:var(--gold);box-shadow:0 0 18px rgba(255,200,61,.12)}
+  .step.p2{border-top-color:#b8c7cc}.step.p3{border-top-color:#c9803d}
+  .medal{font-size:.7rem;letter-spacing:2px;color:var(--muted)}
+  .step.p1 .medal{color:var(--gold)}
+  .drv{font-size:1.6rem;font-weight:800;margin-top:2px;letter-spacing:2px}
+  .team{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+  .qtag{font-size:.7rem;color:var(--teal);margin-top:6px}
+  .bar{height:3px;background:var(--line);margin-top:8px}
+  .bar i{display:block;height:100%;background:var(--teal);box-shadow:0 0 6px var(--teal)}
+  table{width:100%;border-collapse:collapse;font-size:.8rem}
+  th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+  th{font-size:.64rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.4px;font-weight:600;border-bottom-color:var(--line2)}
+  tbody tr:hover td{background:rgba(25,227,255,.05)}
   td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
-  tr.out td{color:#5d5d68;text-decoration:line-through}
+  tr.out td{color:#3d525a;text-decoration:line-through}
   tr.top td:first-child{color:var(--gold);font-weight:700}
-  .up{color:var(--green)}.down{color:#ff6b6b}.same{color:var(--muted)}
+  .up{color:var(--green)}.down{color:var(--red)}.same{color:var(--muted)}
   .scroll{overflow-x:auto}
   .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:14px}
-  .tile{background:var(--panel2);border-radius:10px;padding:12px}
-  .tile small{color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.8px}
-  .tile .big{font-size:1.35rem;font-weight:700;margin:2px 0}
-  .tile .vs{color:var(--muted);font-size:.8rem}
-  .caption{color:var(--muted);font-size:.8rem;margin:0 0 10px}
+  .tile{background:var(--panel2);border:1px solid var(--line);padding:11px 12px}
+  .tile small{color:var(--muted);font-size:.64rem;text-transform:uppercase;letter-spacing:1.4px}
+  .tile .big{font-size:1.5rem;font-weight:700;margin:2px 0;color:var(--teal);text-shadow:0 0 10px rgba(25,227,255,.35)}
+  .tile .vs{color:var(--muted);font-size:.72rem}
+  .caption{color:var(--muted);font-size:.75rem;margin:0 0 10px}
   .cell{white-space:nowrap}
-  .tag{display:inline-block;font-size:.72rem;font-weight:600;padding:1px 6px;border-radius:5px;background:#1d1d24;margin-right:3px}
-  .tag.hit{background:#143a2a;color:var(--green)}
+  .tag{display:inline-block;font-size:.7rem;font-weight:600;padding:0 6px;border:1px solid var(--line2);margin-right:3px;color:var(--muted)}
+  .tag.hit{border-color:#17613f;background:rgba(44,255,154,.1);color:var(--green)}
   .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-  @media (max-width:680px){.two{grid-template-columns:1fr}.race-name{font-size:1.25rem}}
+  @media (max-width:680px){.two,.podium{grid-template-columns:1fr}.race-name{font-size:1.1rem}}
   .rc{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:14px}
-  select,input,button{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 10px;font:inherit}
+  select,input,button{background:var(--panel2);border:1px solid var(--line2);color:var(--text);padding:7px 10px;font:inherit;border-radius:0}
   input{flex:1;min-width:130px}
-  button{cursor:pointer}
-  button.danger{border-color:#6a2a2a;color:#ff8d8d}
+  button{cursor:pointer;text-transform:uppercase;letter-spacing:1px;font-size:.72rem}
+  button:hover{border-color:var(--teal);color:var(--teal)}
+  button.danger{border-color:#6a1d22;color:#ff7a82}
   .outlist{margin-top:10px;display:flex;flex-direction:column;gap:6px}
-  .outrow{display:flex;justify-content:space-between;align-items:center;background:var(--panel2);border-radius:8px;padding:7px 10px;font-size:.85rem}
-  .link{background:none;border:none;color:var(--teal);padding:0;font-size:.8rem}
-  details summary{cursor:pointer;color:var(--teal);font-size:.85rem}
-  details p,details li{color:var(--muted);font-size:.86rem}
-  .err{color:#ff8d8d}
-  footer{color:var(--muted);font-size:.75rem;text-align:center;margin-top:22px}
+  .outrow{display:flex;justify-content:space-between;align-items:center;background:var(--panel2);border:1px solid #4a1a1e;padding:6px 10px;font-size:.8rem}
+  .link{background:none;border:none;color:var(--teal);padding:0}
+  details summary{cursor:pointer;color:var(--teal);font-size:.8rem;letter-spacing:1px;text-transform:uppercase}
+  details p,details li{color:var(--muted);font-size:.8rem}
+  .err{color:#ff7a82}
+  footer{color:var(--muted);font-size:.7rem;text-align:center;margin-top:22px;letter-spacing:2px;text-transform:uppercase}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
     <div>
-      <h1><span>F1</span> Podium Predictor</h1>
-      <div class="sub">Updates itself. Nothing to click, just open it.</div>
+      <h1><span>F1</span> // Podium Predictor</h1>
+      <div class="sub">autonomous feed · nothing to click<span class="cursor"></span></div>
     </div>
     <div class="pill" id="updated">Loading…</div>
   </header>
+  <div class="status" id="status"></div>
   <div id="app"><div class="card">Loading the latest data…</div></div>
   <footer id="foot"></footer>
 </div>
@@ -115,7 +137,7 @@ function raceCard(){
   const n = D.next_race;
   if(!n) return `<div class="card"><h2>Next race</h2><div class="race-name">Season complete</div><div class="meta">The next season's calendar isn't published yet. This page will pick it up automatically.</div></div>`;
   const p = D.prediction;
-  const chip = p ? (p.live ? '<span class="chip live">frozen before the race</span>' : '<span class="chip warn">made after the race started</span>') : '';
+  const chip = p ? (p.provisional ? '<span class="chip warn">fallback</span>' : p.live ? '<span class="chip live">frozen before the race</span>' : '<span class="chip warn">made after the race started</span>') : '';
   let body = '';
   const qDone = n.quali_start && new Date(n.quali_start) < Date.now();
   if(!p){
@@ -131,8 +153,8 @@ function raceCard(){
     <div class="race-name">${esc(n.name)}<span class="chip">Round ${n.round}</span>${n.sprint_weekend ? '<span class="chip">sprint weekend</span>' : ''}${chip}</div>
     <div class="meta">${esc(n.circuit)} · ${esc(n.locality)}, ${esc(n.country)}</div>
     <div class="times">
-      <div class="time"><small>Qualifying</small><b>${when(n.quali_start)}</b><i>${n.quali_start ? rel(n.quali_start) : ''}</i></div>
-      <div class="time"><small>Race</small><b>${when(n.race_start)}</b><i>${rel(n.race_start)}</i></div>
+      <div class="time"><small>Qualifying</small><b>${when(n.quali_start)}</b><i data-t="${n.quali_start || ''}">${n.quali_start ? rel(n.quali_start) : ''}</i></div>
+      <div class="time"><small>Race</small><b>${when(n.race_start)}</b><i data-t="${n.race_start}">${rel(n.race_start)}</i></div>
     </div>
     ${body}
   </div>`;
@@ -142,8 +164,8 @@ function podiumBlock(){
   const p = D.prediction;
   const out = new Set((outState.list || []).map(o => o.driver));
   const running = p.order.filter(o => !out.has(o.driver));
-  const medals = ['🥇','🥈','🥉'];
-  const top = running.slice(0,3).map((o,i) => `<div class="step p${i+1}"><div class="medal">${medals[i]}</div><div class="drv">${esc(o.driver)}</div><div class="team">${esc(o.team)}</div><div class="qtag">qualified P${o.qpos}</div></div>`).join('');
+  const medals = ['P1 // WIN','P2','P3'];
+  const top = running.slice(0,3).map((o,i) => `<div class="step p${i+1}"><div class="medal">${medals[i]}</div><div class="drv">${esc(o.driver)}</div><div class="team">${esc(o.team)}</div><div class="qtag">QUALI P${o.qpos}</div><div class="bar"><i style="width:${Math.max(8, 100 - (o.qpos-1)*7)}%"></i></div></div>`).join('');
   let pos = 0;
   const rows = p.order.slice(0,10).map(o => {
     const isOut = out.has(o.driver);
@@ -153,13 +175,14 @@ function podiumBlock(){
     return `<tr class="${isOut ? 'out' : (pos <= 3 ? 'top' : '')}"><td>${isOut ? '—' : 'P' + pos}</td><td>${esc(o.driver)}</td><td>${esc(o.team)}</td><td class="n">P${o.qpos}</td><td class="n">${mv}</td></tr>`;
   }).join('');
   const sel = running.map(o => `<option value="${esc(o.driver)}">${esc(o.driver)} · ${esc(o.team)}</option>`).join('');
-  const list = (outState.list || []).map(o => `<div class="outrow"><span>🔴 <b>${esc(o.driver)}</b> ${o.reason ? '· ' + esc(o.reason) : ''}</span><button class="link" data-undo="${esc(o.driver)}">undo</button></div>`).join('');
-  return `
+  const list = (outState.list || []).map(o => `<div class="outrow"><span><span class="down">[OUT]</span> <b>${esc(o.driver)}</b> ${o.reason ? '· ' + esc(o.reason) : ''}</span><button class="link" data-undo="${esc(o.driver)}">undo</button></div>`).join('');
+  const fb = p.provisional ? `<div class="notice fb"><b>FALLBACK:</b> qualifying lap times aren't published yet, so this is just the starting-grid order, not the model's prediction. It is replaced automatically, and the real prediction frozen, once the times arrive. It is not counted in the track record.</div>` : '';
+  return `${fb}
     <div class="podium">${top}</div>
     <div class="scroll"><table>
       <thead><tr><th>Predicted</th><th>Driver</th><th>Team</th><th class="n">Qualified</th><th class="n">vs quali</th></tr></thead>
       <tbody>${rows}</tbody></table></div>
-    <p class="caption" style="margin-top:10px">Frozen ${when(p.generated_at)}. Built from qualifying and recent form only. It mostly follows qualifying order; the track record below shows how that compares.</p>
+    <p class="caption" style="margin-top:10px">${p.provisional ? 'Provisional, checked ' + when(p.generated_at) + '. Grid order only.' : 'Frozen ' + when(p.generated_at) + '. Built from qualifying and recent form only. It mostly follows qualifying order; the track record below shows how that compares.'}</p>
     <div class="rc">
       <select id="outSel">${sel}</select>
       <input id="outWhy" placeholder="reason (optional)">
@@ -259,7 +282,10 @@ function render(){
   outState.list = loadOut();
   $('app').innerHTML = raceCard() + circuitCard() + trackCard() + standingsCard() + howCard();
   $('updated').innerHTML = `<span class="dot"></span>Data changed <b>${rel(D.generated_at)}</b> · checked hourly`;
-  $('foot').textContent = `Season ${D.season}`;
+  $('foot').textContent = `Season ${D.season} // data: jolpi + openf1`;
+  const n = D.next_race;
+  $('status').innerHTML = `<span>SYS <b>ONLINE</b></span><span>SYNC <b>${new Date(D.generated_at).toISOString().slice(11,16)}Z</b></span>` +
+    (n ? `<span>ROUND <b>${n.round}</b></span><span>MODE <b>${D.prediction ? (D.prediction.provisional ? 'FALLBACK (GRID ORDER)' : 'PREDICTION LOCKED') : 'AWAITING QUALI'}</b></span>` : '<span>MODE <b>OFF-SEASON</b></span>');
   const btn = $('outBtn');
   if(btn){
     btn.onclick = () => {
@@ -283,6 +309,12 @@ async function load(){
     if(!D) $('app').innerHTML = `<div class="card err">Couldn't load the data (${esc(e.message)}). Try again in a minute.</div>`;
   }
 }
+function cd(iso){
+  const ms = new Date(iso) - Date.now(), a = Math.abs(ms), p = x => String(x).padStart(2,'0');
+  const d = Math.floor(a/864e5), h = Math.floor(a%864e5/36e5), m = Math.floor(a%36e5/6e4), sc = Math.floor(a%6e4/1e3);
+  return (ms >= 0 ? 'T-' : 'T+') + (d ? d + 'd ' : '') + p(h) + ':' + p(m) + ':' + p(sc);
+}
+setInterval(() => document.querySelectorAll('[data-t]').forEach(e => { if(e.dataset.t) e.textContent = cd(e.dataset.t); }), 1000);
 load();
 setInterval(load, REFRESH_MS);
 </script>
