@@ -274,11 +274,16 @@ function standingsCard(){
 
 function howCard(){
   const m = D.model;
-  const w = m ? Object.entries(m.weights).map(([k,v]) => `<li>${esc(k)}: <b>${v}</b></li>`).join('') : '';
+  const pu = m && m.per_unit;
+  const w = pu ? Object.entries(pu).map(([k,v]) => `<li>${esc(k)}: <b>${v > 0 ? '+' : ''}${v}</b> places per unit</li>`).join('') : '';
+  const formula = pu ? `<p><b>The formula, in plain units:</b> predicted finish = ${m.intercept_units} ${Object.entries(pu).map(([k,v]) => `${v < 0 ? '−' : '+'} ${Math.abs(v)} × (${esc(k.toLowerCase())})`).join(' ')}. Drivers are ranked by this number, lowest first. The top three are the predicted podium.</p>
+    <ul>${w}</ul>
+    <p>Caution: these inputs overlap (grid position, gap to pole and gap to teammate all measure Saturday speed), so an individual number can look odd, such as a negative teammate weight. Only the combined prediction means anything; the track record shows how it actually does.</p>` : '';
   return `<div class="card"><details><summary>How it works</summary>
     <p><b>What it uses:</b> only that weekend's <i>qualifying</i> result (each driver's gap to pole, gap to their teammate, grid position) plus how each driver finished in their last 3 races. It never looks at practice or at the race it is predicting. On sprint weekends the sprint result is allowed but not used yet.</p>
-    <p><b>The model:</b> a weighted ridge regression, which is a linear model. It adds up the clues, each multiplied by a number learned from past races (this season's races count 3×, and the "ridge" part stops it overreacting to noise). It is trained on ${m ? m.training_races + ' races (' + m.training_rows + ' driver results)' : 'all completed races'} of this and last season.</p>
-    ${m ? `<p>What it currently learned (higher = pushes a driver toward a worse finish):</p><ul>${w}</ul>` : ''}
+    <p><b>The model:</b> a weighted ridge regression, which is a linear model. It adds up the clues, each multiplied by a number learned from past races (this season's races count 3×, and the "ridge" part stops it overreacting to noise). It is trained on ${m ? m.training_races + ' races (' + m.training_rows + ' driver results)' : 'all completed races'} of this and last season. Its job is to learn how a qualifying result usually turns into a race result.</p>
+    ${formula}
+    <p><b>Backtests:</b> adding practice pace, circuit traits or rain, or switching to non-linear models, did not beat simply copying the qualifying order by more than noise, so the model stays simple.</p>
     <p><b>Updating:</b> a job on GitHub's servers checks the public results database every hour and rebuilds this page's data. Predictions freeze the first time they're made, so the track record can't be quietly rewritten.</p>
     <p><b>Data:</b> ${esc(D.sources)}.</p></details></div>`;
 }

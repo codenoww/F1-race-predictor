@@ -378,8 +378,12 @@ def rank_drivers(model, rows):
 
 
 def model_summary(model, used, n_rows):
-    beta = model[0]
+    beta, mn, rg = model
+    per_unit = beta[1:] / rg                                   # effect of +1 unit of each raw input
+    intercept_units = float(beta[0] - (beta[1:] * mn / rg).sum())
     return {
+        "per_unit": {FEATURE_LABELS[f]: round(float(b), 3) for f, b in zip(FEATURES, per_unit)},
+        "intercept_units": round(intercept_units, 2),
         "name": "Weighted ridge regression (linear)",
         "ridge_penalty": RIDGE,
         "training_races": len(used),
