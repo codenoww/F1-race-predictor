@@ -377,6 +377,78 @@ def rank_drivers(model, rows):
              "score": round(float(s[j]), 2)} for i, j in enumerate(order)]
 
 
+def _logistic_fit(x, t, iters=50):
+    """P(t=1) = sigmoid(a + b*x), plain Newton steps, tiny ridge so it always converges."""
+    a, b = 0.0, 0.0
+    for _ in range(iters):
+        p = 1 / (1 + np.exp(-(a + b * x)))
+        g = np.array([np.sum(p - t), np.sum((p - t) * x)])
+        wgt = p * (1 - p) + 1e-9
+        H = np.array([[wgt.sum(), (wgt * x).sum()], [(wgt * x).sum(), (wgt * x * x).sum()]]) + np.eye(2) * 1e-6
+        step = np.linalg.solve(H, g)
+        a, b = a - step[0], b - step[1]
+        if np.abs(step).max() < 1e-8:
+            break
+    return float(a), float(b)
+
+
+def calibrate(table, visible, min_races=12):
+    """Turn predicted finish numbers into probabilities. Every past race is predicted using only the
+    races before it (as in the backtest); we then fit P(podium) and P(win) against those honest
+    out-of-sample predictions. Returns None until there are enough races."""
+    xs, pod, win, n_races = [], [], [], 0
+    for i, k in enumerate(visible):
+        y = key_tuple(k)[0]
+        tr, w, _ = training_set(table, visible[:i], y)
+        rows = [r for r in table[k] if r["y"] is not None]
+        if not tr or len(rows) < 10:
+            continue
+        s = score(fit(tr, w), rows)
+        xs += list(s)
+        pod += [1.0 if r["y"] <= 3 else 0.0 for r in rows]
+        win += [1.0 if r["y"] == 1 else 0.0 for r in rows]
+        n_races += 1
+    if n_races < min_races:
+        return None
+    x, pod, win = np.array(xs), np.array(pod), np.array(win)
+    ap, bp = _logistic_fit(x, pod)
+    aw, bw = _logistic_fit(x, win)
+    p = 1 / (1 + np.exp(-(ap + bp * x)))
+    # reliability: when it says ~X%, how often did it happen?
+    bins = []
+    for lo, hi in ((0, .1), (.1, .3), (.3, .6), (.6, .85), (.85, 1.01)):
+        m = (p >= lo) & (p < hi)
+        if m.sum() >= 5:
+            bins.append({"said": round(float(p[m].mean()) * 100), "happened": round(float(pod[m].mean()) * 100),
+                         "n": int(m.sum())})
+    return {"a_podium": ap, "b_podium": bp, "a_win": aw, "b_win": bw, "races": n_races, "rows": int(len(x)),
+            "brier_podium": round(float(np.mean((p - pod) ** 2)), 4),
+            "brier_podium_naive": round(float(np.mean((pod.mean() - pod) ** 2)), 4),
+            "reliability": bins}
+
+
+def add_probabilities(order, cal):
+    """Per-driver P(podium) and P(win) for one race. Shifted so the field adds up to 3 podium
+    places and 1 win, which is a true fact about every race."""
+    if not cal or not order or any("score" not in o for o in order):
+        return order
+    s = np.array([o["score"] for o in order], float)
+
+    def norm(a, b, total):
+        lo, hi = a - 20, a + 20
+        for _ in range(60):
+            mid = (lo + hi) / 2
+            if (1 / (1 + np.exp(-(mid + b * s)))).sum() > total:
+                hi = mid
+            else:
+                lo = mid
+        return 1 / (1 + np.exp(-((lo + hi) / 2 + b * s)))
+
+    pp = norm(cal["a_podium"], cal["b_podium"], min(3.0, len(s)))
+    pw = norm(cal["a_win"], cal["b_win"], 1.0)
+    return [{**o, "p_podium": round(float(pp[i]), 3), "p_win": round(float(pw[i]), 3)} for i, o in enumerate(order)]
+
+
 def model_summary(model, used, n_rows):
     beta, mn, rg = model
     per_unit = beta[1:] / rg                                   # effect of +1 unit of each raw input
@@ -618,6 +690,13 @@ def main():
     pole_stats = {"current": season_pole_stats(table, visible, year),
                   "previous": season_pole_stats(table, visible, year - 1)}
 
+    cal = calibrate(table, visible)
+    if cal:
+        print(f"calibration: {cal['races']} races, Brier {cal['brier_podium']} (naive {cal['brier_podium_naive']})",
+              cal["reliability"])
+    if prediction and prediction.get("order"):
+        prediction = {**prediction, "order": add_probabilities(prediction["order"], cal)}
+
     dashboard = {
         "season": year,
         "next_race": next_race,
@@ -630,6 +709,8 @@ def main():
         "track_record": track,
         "standings": standings,
         "model": model_info,
+        "calibration": ({k: v for k, v in cal.items() if k in ("races", "rows", "brier_podium", "brier_podium_naive",
+                                                                "reliability")} if cal else None),
         "sources": "Qualifying times, race results and standings: api.jolpi.ca (Ergast-compatible)",
     }
 

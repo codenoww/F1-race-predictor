@@ -57,6 +57,7 @@
   .drv{font-size:1.6rem;font-weight:800;margin-top:2px;letter-spacing:2px}
   .team{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
   .qtag{font-size:.7rem;color:var(--teal);margin-top:6px}
+  .pc{font-size:.72rem;color:var(--amber);margin-top:6px;letter-spacing:.5px}
   .bar{height:3px;background:var(--line);margin-top:8px}
   .bar i{display:block;height:100%;background:var(--teal);box-shadow:0 0 6px var(--teal)}
   table{width:100%;border-collapse:collapse;font-size:.8rem}
@@ -166,19 +167,21 @@ function raceCard(){
   </div>`;
 }
 
+function prob(x){return Math.round(x*100)+'%'}
 function podiumBlock(){
   const p = D.prediction;
   const out = new Set((outState.list || []).map(o => o.driver));
   const running = p.order.filter(o => !out.has(o.driver));
+  const hasP = p.order.some(o => o.p_podium != null);
   const medals = ['P1 // WIN','P2','P3'];
-  const top = running.slice(0,3).map((o,i) => `<div class="step p${i+1}"><div class="medal">${medals[i]}</div><div class="drv">${esc(o.driver)}</div><div class="team">${esc(o.team)}</div><div class="qtag">QUALI P${o.qpos}</div><div class="bar"><i style="width:${Math.max(8, 100 - (o.qpos-1)*7)}%"></i></div></div>`).join('');
+  const top = running.slice(0,3).map((o,i) => `<div class="step p${i+1}"><div class="medal">${medals[i]}</div><div class="drv">${esc(o.driver)}</div><div class="team">${esc(o.team)}</div><div class="qtag">QUALI P${o.qpos}</div>${o.p_podium != null ? `<div class="pc">PODIUM ${prob(o.p_podium)} · WIN ${prob(o.p_win)}</div><div class="bar"><i style="width:${Math.max(3, o.p_podium*100)}%"></i></div>` : `<div class="bar"><i style="width:${Math.max(8, 100 - (o.qpos-1)*7)}%"></i></div>`}</div>`).join('');
   let pos = 0;
   const rows = p.order.slice(0,10).map(o => {
     const isOut = out.has(o.driver);
     if(!isOut) pos++;
     const d = o.qpos - pos;
     const mv = isOut ? '' : d > 0 ? `<span class="up">▲${d}</span>` : d < 0 ? `<span class="down">▼${-d}</span>` : '<span class="same">=</span>';
-    return `<tr class="${isOut ? 'out' : (pos <= 3 ? 'top' : '')}"><td>${isOut ? '—' : 'P' + pos}</td><td>${esc(o.driver)}</td><td>${esc(o.team)}</td><td class="n">P${o.qpos}</td><td class="n">${mv}</td></tr>`;
+    return `<tr class="${isOut ? 'out' : (pos <= 3 ? 'top' : '')}"><td>${isOut ? '—' : 'P' + pos}</td><td>${esc(o.driver)}</td><td>${esc(o.team)}</td><td class="n">P${o.qpos}</td><td class="n">${mv}</td>${hasP ? `<td class="n">${prob(o.p_podium)}</td><td class="n">${prob(o.p_win)}</td>` : ''}</tr>`;
   }).join('');
   const sel = running.map(o => `<option value="${esc(o.driver)}">${esc(o.driver)} · ${esc(o.team)}</option>`).join('');
   const list = (outState.list || []).map(o => `<div class="outrow"><span><span class="down">[OUT]</span> <b>${esc(o.driver)}</b> ${o.reason ? '· ' + esc(o.reason) : ''}</span><button class="link" data-undo="${esc(o.driver)}">undo</button></div>`).join('');
@@ -186,9 +189,9 @@ function podiumBlock(){
   return `${fb}
     <div class="podium">${top}</div>
     <div class="scroll"><table>
-      <thead><tr><th>Predicted</th><th>Driver</th><th>Team</th><th class="n">Qualified</th><th class="n">vs quali</th></tr></thead>
+      <thead><tr><th>Predicted</th><th>Driver</th><th>Team</th><th class="n">Qualified</th><th class="n">vs quali</th>${hasP ? '<th class="n">Podium %</th><th class="n">Win %</th>' : ''}</tr></thead>
       <tbody>${rows}</tbody></table></div>
-    <p class="caption" style="margin-top:10px">${p.provisional ? 'Provisional, checked ' + when(p.generated_at) + '. Grid order only.' : 'Frozen ' + when(p.generated_at) + '. Built from qualifying and recent form only. It mostly follows qualifying order; the track record below shows how that compares.'}</p>
+    <p class="caption" style="margin-top:10px">${p.provisional ? 'Provisional, checked ' + when(p.generated_at) + '. Grid order only.' : 'Frozen ' + when(p.generated_at) + '. Built from qualifying and recent form only. It mostly follows qualifying order; the track record below shows how that compares.' + (hasP && D.calibration ? ' Percentages are calibrated on ' + D.calibration.races + ' past races: when the model says ~20% the podium happened ~20% of the time. They sum to 300% (three podium places) and 100% (one win) across the field.' : '')}</p>
     <div class="rc">
       <select id="outSel">${sel}</select>
       <input id="outWhy" placeholder="reason (optional)">
