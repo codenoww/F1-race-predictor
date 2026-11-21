@@ -233,5 +233,247 @@
     "Average finish, last 3 races": 2.758
    }
   }
+ },
+ "2026-21": {
+  "generated_at": "2026-11-21T17:28:51Z",
+  "live": true,
+  "order": [
+   {
+    "pos": 1,
+    "driver": "ANT",
+    "team": "Mercedes",
+    "qpos": 1,
+    "score": 3.74
+   },
+   {
+    "pos": 2,
+    "driver": "VER",
+    "team": "Red Bull",
+    "qpos": 2,
+    "score": 4.2
+   },
+   {
+    "pos": 3,
+    "driver": "RUS",
+    "team": "Mercedes",
+    "qpos": 3,
+    "score": 5.33
+   },
+   {
+    "pos": 4,
+    "driver": "NOR",
+    "team": "McLaren",
+    "qpos": 4,
+    "score": 5.68
+   },
+   {
+    "pos": 5,
+    "driver": "HAD",
+    "team": "Red Bull",
+    "qpos": 5,
+    "score": 6.69
+   },
+   {
+    "pos": 6,
+    "driver": "PIA",
+    "team": "McLaren",
+    "qpos": 7,
+    "score": 7.76
+   },
+   {
+    "pos": 7,
+    "driver": "LIN",
+    "team": "RB F1 Team",
+    "qpos": 6,
+    "score": 8.67
+   },
+   {
+    "pos": 8,
+    "driver": "LAW",
+    "team": "RB F1 Team",
+    "qpos": 8,
+    "score": 8.78
+   },
+   {
+    "pos": 9,
+    "driver": "LEC",
+    "team": "Ferrari",
+    "qpos": 11,
+    "score": 9.77
+   },
+   {
+    "pos": 10,
+    "driver": "GAS",
+    "team": "Alpine F1 Team",
+    "qpos": 9,
+    "score": 9.96
+   },
+   {
+    "pos": 11,
+    "driver": "HAM",
+    "team": "Ferrari",
+    "qpos": 12,
+    "score": 10.43
+   },
+   {
+    "pos": 12,
+    "driver": "COL",
+    "team": "Alpine F1 Team",
+    "qpos": 10,
+    "score": 10.96
+   },
+   {
+    "pos": 13,
+    "driver": "HUL",
+    "team": "Audi",
+    "qpos": 13,
+    "score": 12.51
+   },
+   {
+    "pos": 14,
+    "driver": "BOR",
+    "team": "Audi",
+    "qpos": 15,
+    "score": 13.7
+   },
+   {
+    "pos": 15,
+    "driver": "SAI",
+    "team": "Williams",
+    "qpos": 14,
+    "score": 14.01
+   },
+   {
+    "pos": 16,
+    "driver": "ALB",
+    "team": "Williams",
+    "qpos": 16,
+    "score": 14.66
+   },
+   {
+    "pos": 17,
+    "driver": "PER",
+    "team": "Cadillac F1 Team",
+    "qpos": 18,
+    "score": 16.73
+   },
+   {
+    "pos": 18,
+    "driver": "CAM",
+    "team": "Haas F1 Team",
+    "qpos": 17,
+    "score": 16.97
+   },
+   {
+    "pos": 19,
+    "driver": "ALO",
+    "team": "Aston Martin",
+    "qpos": 19,
+    "score": 17.03
+   },
+   {
+    "pos": 20,
+    "driver": "STR",
+    "team": "Aston Martin",
+    "qpos": 20,
+    "score": 17.98
+   },
+   {
+    "pos": 21,
+    "driver": "BOT",
+    "team": "Cadillac F1 Team",
+    "qpos": 21,
+    "score": 18.83
+   },
+   {
+    "pos": 22,
+    "driver": "BEA",
+    "team": "Haas F1 Team",
+    "qpos": 22,
+    "score": 19.36
+   }
+  ],
+  "qualifying": [
+   {
+    "pos": 1,
+    "driver": "ANT",
+    "team": "Mercedes",
+    "gap_pct": 0.0
+   },
+   {
+    "pos": 2,
+    "driver": "VER",
+    "team": "Red Bull",
+    "gap_pct": 0.275
+   },
+   {
+    "pos": 3,
+    "driver": "RUS",
+    "team": "Mercedes",
+    "gap_pct": 0.353
+   },
+   {
+    "pos": 4,
+    "driver": "NOR",
+    "team": "McLaren",
+    "gap_pct": 0.374
+   },
+   {
+    "pos": 5,
+    "driver": "HAD",
+    "team": "Red Bull",
+    "gap_pct": 0.744
+   },
+   {
+    "pos": 6,
+    "driver": "LIN",
+    "team": "RB F1 Team",
+    "gap_pct": 0.825
+   },
+   {
+    "pos": 7,
+    "driver": "PIA",
+    "team": "McLaren",
+    "gap_pct": 1.071
+   },
+   {
+    "pos": 8,
+    "driver": "LAW",
+    "team": "RB F1 Team",
+    "gap_pct": 1.275
+   },
+   {
+    "pos": 9,
+    "driver": "GAS",
+    "team": "Alpine F1 Team",
+    "gap_pct": 1.291
+   },
+   {
+    "pos": 10,
+    "driver": "COL",
+    "team": "Alpine F1 Team",
+    "gap_pct": 1.513
+   }
+  ],
+  "model": {
+   "per_unit": {
+    "Qualifying gap to pole (% of lap)": 0.251,
+    "Gap to teammate in qualifying (% of lap)": -0.208,
+    "Qualifying position": 0.55,
+    "Average finish, last 3 races": 0.183
+   },
+   "intercept_units": 2.57,
+   "name": "Weighted ridge regression (linear)",
+   "ridge_penalty": 0.5,
+   "training_races": 44,
+   "training_rows": 913,
+   "intercept": 6.364,
+   "weights": {
+    "Qualifying gap to pole (% of lap)": 4.189,
+    "Gap to teammate in qualifying (% of lap)": -6.123,
+    "Qualifying position": 11.543,
+    "Average finish, last 3 races": 3.715
+   }
+  }
  }
 }
