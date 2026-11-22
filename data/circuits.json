@@ -503,5 +503,38 @@
     "winner_grid": 2
    }
   ]
+ },
+ "losail": {
+  "fetched": "2026-11-22T11:17:29Z",
+  "editions": [
+   {
+    "year": 2021,
+    "pole": "HAM",
+    "pole_finish": 1,
+    "winner": "HAM",
+    "winner_grid": 1
+   },
+   {
+    "year": 2023,
+    "pole": "VER",
+    "pole_finish": 1,
+    "winner": "VER",
+    "winner_grid": 1
+   },
+   {
+    "year": 2024,
+    "pole": "RUS",
+    "pole_finish": 4,
+    "winner": "VER",
+    "winner_grid": 2
+   },
+   {
+    "year": 2025,
+    "pole": "PIA",
+    "pole_finish": 2,
+    "winner": "VER",
+    "winner_grid": 3
+   }
+  ]
  }
 }
